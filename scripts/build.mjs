@@ -16,7 +16,7 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 // ---------- Settings ----------
 const cfgText = read('assets/js/config.js');
 const fromCfg = (k) => (cfgText.match(new RegExp(k + ":\\s*'([^']*)'")) || [])[1] || '';
-const SB_URL = (process.env.SUPABASE_URL || fromCfg('supabaseUrl')).replace(/\/$/, '');
+const SB_URL = (process.env.SUPABASE_URL || fromCfg('supabaseUrl')).replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
 const SB_KEY = process.env.SUPABASE_ANON_KEY || fromCfg('supabaseAnonKey');
 
 // ---------- Content ----------

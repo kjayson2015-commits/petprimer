@@ -4,8 +4,8 @@
 // them here directly. Both are safe to be public: the database rules
 // (row-level security) decide what anyone can read or write.
 window.PETPRIMER = {
-  supabaseUrl: '',
-  supabaseAnonKey: '',
+  supabaseUrl: 'https://buqbmufgismhxenychxk.supabase.co',
+  supabaseAnonKey: 'sb_publishable_63PrB1H73xIKT3pSwScJmA_ZfFatSJC',
   siteUrl: 'https://petprimer.online',
   socials: [
     { name: 'Instagram', handle: '@petprimer.care', url: 'https://www.instagram.com/petprimer.care/' },
