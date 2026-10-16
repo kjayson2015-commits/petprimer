@@ -1,5 +1,6 @@
 import { getClient, el, toast, currentProfile, shrinkImage, rank } from '/assets/js/app.js';
-import { renderMarkdown, slugify, RESERVED_SLUGS, GRADES, gradeClass, plainText } from '/assets/js/markdown.js';
+import { renderMarkdown, slugify, RESERVED_SLUGS, GRADES, gradeClass, plainText, esc } from '/assets/js/markdown.js';
+import { loadWorkspace, researchView, sourcesView, sourcePicker } from '/assets/js/workspace.js';
 
 const root = document.querySelector('[data-editor]');
 const REPO_ACTIONS = 'https://github.com/kjayson2015-commits/petprimer/actions/workflows/deploy.yml';
@@ -7,7 +8,7 @@ const KINDS = { note: 'Note', faq: 'FAQ', myth: 'Myth check', page: 'Page' };
 const PETS = { dogs: 'Dogs', cats: 'Cats', both: 'Dogs and cats' };
 const STATUS = { draft: 'Draft', review: 'Review', published: 'Published' };
 const STATUS_COLORS = { published: ['#D3E6D9', '#1F4D36'], draft: ['#EEF0EC', '#3A4540'], review: ['#FBE9C8', '#6B3F0A'] };
-const S = { sb: null, me: null, posts: [], section: 'all', q: '', cur: null, dirty: false, preview: false, reports: [], profiles: [], waitlist: 0 };
+const S = { sb: null, me: null, posts: [], section: 'research', q: '', cur: null, dirty: false, preview: false, reports: [], profiles: [], waitlist: 0, notes: [], sources: [], curNoteId: null, curSourceId: null, wsError: null };
 
 const FILTERS = {
   all: () => true,
@@ -18,7 +19,7 @@ const FILTERS = {
   drafts: (p) => p.status !== 'published',
   pages: (p) => p.kind === 'page'
 };
-const LABELS = { all: 'All content', dogs: 'Dogs', cats: 'Cats', faq: 'Frequently asked', myth: 'Myth checks', drafts: 'Drafts and review', pages: 'Pages', reports: 'Reported posts', members: 'Members and badges', waitlist: 'Membership waitlist', publish: 'Publish the site' };
+const LABELS = { research: 'Research notes', sources: 'Source library', all: 'All content', dogs: 'Dogs', cats: 'Cats', faq: 'Frequently asked', myth: 'Myth checks', drafts: 'Drafts and review', pages: 'Pages', reports: 'Reported posts', members: 'Members and badges', waitlist: 'Membership waitlist', publish: 'Publish the site' };
 
 function gate(msg, withButton) {
   root.replaceChildren(el('div', { class: 'gate' },
@@ -73,6 +74,10 @@ async function save(nextStatus) {
   if (res.error) return toast('Could not save: ' + res.error.message);
   S.dirty = false;
   await loadPosts();
+  if (p._fromNoteId) {
+    await S.sb.from('research_notes').update({ post_id: res.data.id }).eq('id', p._fromNoteId);
+    const note = S.notes.find((n) => n.id === p._fromNoteId); if (note) note.post_id = res.data.id;
+  }
   S.cur = { ...res.data, _slugAuto: false };
   toast(nextStatus === 'published' ? 'Published. It appears on petprimer.online at the next site update.' : 'Saved.');
   render();
@@ -111,13 +116,14 @@ function sidebar() {
   const navBtn = (id, count) => el('button', { type: 'button', class: 'nav', 'aria-pressed': S.section === id && !S.q ? 'true' : 'false', onclick: () => go(id) },
     el('span', { text: LABELS[id] }), count === undefined ? null : el('span', { class: 'small muted', text: String(count) }));
   const search = el('input', { type: 'search', class: 'field', placeholder: 'Search everything…', 'aria-label': 'Search all content', value: S.q, style: 'min-height:42px;padding:0 12px' });
-  search.addEventListener('input', () => { S.q = search.value; paintList(); });
+  search.addEventListener('input', () => { const was = !!listEl; S.q = search.value; if (!was || !S.q) { render(); const f = root.querySelector('.ed-side input[type=search]'); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); } } else paintList(); });
   return el('aside', { class: 'ed-side', 'aria-label': 'Editor sections' },
     el('a', { href: '/', class: 'brand' }, el('img', { src: '/assets/img/golden-retriever.jpg', alt: '', width: 36, height: 36, style: 'width:36px;height:36px' }),
       el('span', { style: 'display:flex;flex-direction:column;line-height:1.2' }, el('span', { style: 'font-size:17px', text: 'Pet Primer' }), el('span', { class: 'small muted', style: 'font-family:var(--body);font-weight:400;font-size:12px', text: 'Editor · only you see this' }))),
     search,
-    el('button', { type: 'button', class: 'btn', text: '+ New note', onclick: () => { if (!confirmLeave()) return; S.cur = blankPost(); S.section = 'all'; S.q = ''; render(); } }),
-    el('div', { class: 'grp' }, el('span', { class: 'lbl', text: 'Content' }), ...['all', 'dogs', 'cats', 'faq', 'myth', 'drafts', 'pages'].map((id) => navBtn(id, S.posts.filter(FILTERS[id]).length))),
+    el('button', { type: 'button', class: 'btn', text: '+ New article', onclick: () => { if (!confirmLeave()) return; S.cur = blankPost(); S.section = 'all'; S.q = ''; render(); } }),
+    el('div', { class: 'grp' }, el('span', { class: 'lbl', text: 'Research (private)' }), navBtn('research', S.notes.length), navBtn('sources', S.sources.length)),
+    el('div', { class: 'grp' }, el('span', { class: 'lbl', text: 'Articles readers see' }), ...['all', 'dogs', 'cats', 'faq', 'myth', 'drafts', 'pages'].map((id) => navBtn(id, S.posts.filter(FILTERS[id]).length))),
     el('div', { class: 'grp' }, el('span', { class: 'lbl', text: 'Community' }), navBtn('reports', S.reports.filter((r) => r.status === 'open').length), navBtn('members')),
     el('div', { class: 'grp' }, el('span', { class: 'lbl', text: 'Business' }), navBtn('waitlist'), navBtn('publish')),
     el('span', { style: 'margin-top:auto', class: 'small muted' }, 'Signed in as ', el('strong', { text: S.me.display_name || 'you' })));
@@ -129,6 +135,7 @@ async function go(id) {
   S.section = id; S.q = ''; S.dirty = false;
   if (id === 'reports') await loadReports();
   if (id === 'members' || id === 'waitlist') await loadMembers();
+  if (id === 'research' || id === 'sources') await loadWorkspace(S);
   if (FILTERS[id]) S.cur = S.cur && FILTERS[id](S.cur) ? S.cur : (S.posts.filter(FILTERS[id])[0] ? { ...S.posts.filter(FILTERS[id])[0], _slugAuto: false } : null);
   render();
 }
@@ -136,11 +143,18 @@ async function go(id) {
 let listEl = null;
 function paintList() {
   if (!listEl) return;
-  let items, title, sub;
+  let items, title, sub, extra = [];
   if (S.q.trim()) {
     const idx = S.posts.map((p) => ({ p, title: p.title, keyword: p.focus_keyword, tags: p.tags, pet: p.pet, kind: KINDS[p.kind], summary: p.bottom_line, text: plainText(p.body) }));
     items = rank(idx, S.q, 50).map((r) => r.p);
-    title = 'Search'; sub = `${items.length} ${items.length === 1 ? 'result' : 'results'} for “${S.q.trim()}”`;
+    const noteHits = rank(S.notes.map((n) => ({ n, title: n.title, tags: n.tags, text: plainText(n.body) })), S.q, 20).map((r) => r.n);
+    const srcHits = rank(S.sources.map((x) => ({ x, title: x.title, tags: x.kind + ' ' + x.authors, text: x.summary })), S.q, 20).map((r) => r.x);
+    extra = [
+      ...noteHits.map((n) => el('button', { type: 'button', class: 'item', onclick: () => { S.q = ''; S.section = 'research'; S.curNoteId = n.id; render(); } }, el('span', { style: 'font-weight:600', text: n.title }), el('span', { class: 'small muted', text: 'Research note · ' + plainText(n.body).slice(0, 60) }))),
+      ...srcHits.map((x) => el('button', { type: 'button', class: 'item', onclick: () => { S.q = ''; S.section = 'sources'; S.curSourceId = x.id; render(); } }, el('span', { style: 'font-weight:600', text: x.title }), el('span', { class: 'small muted', text: 'Source · ' + x.kind })))
+    ];
+    const total = items.length + extra.length;
+    title = 'Search'; sub = `${total} ${total === 1 ? 'result' : 'results'} for “${S.q.trim()}”`;
   } else {
     items = S.posts.filter(FILTERS[S.section] || FILTERS.all);
     title = LABELS[S.section] || 'All content'; sub = `${items.length} ${items.length === 1 ? 'item' : 'items'}`;
@@ -154,7 +168,7 @@ function paintList() {
         el('span', { style: 'display:flex;gap:6px;flex-wrap:wrap' }, el('span', { class: 'pill', style: `font-size:12px;background:${c[0]};color:${c[1]}`, text: STATUS[p.status] }), el('span', { class: 'pill', style: 'font-size:12px', text: `${KINDS[p.kind]} · ${PETS[p.pet]}` })));
       b.addEventListener('click', () => { if (!confirmLeave()) return; S.cur = { ...p, claims: (p.claims || []).map((x) => ({ ...x })), _slugAuto: false }; S.dirty = false; S.preview = false; render(); });
       return b;
-    }) : [el('p', { class: 'muted', style: 'padding:24px 16px', text: S.q ? 'Nothing found. Try another word or check the spelling.' : 'Nothing here yet. Click “+ New note”.' })]));
+    }) : (extra.length ? [] : [el('p', { class: 'muted', style: 'padding:24px 16px', text: S.q ? 'Nothing found. Try another word or check the spelling.' : 'Nothing here yet. Click “+ New article”.' })])), ...extra);
 }
 
 function field(label, input) { return el('label', {}, el('span', { text: label }), input); }
@@ -191,7 +205,8 @@ function claimsEditor() {
       src.addEventListener('input', () => { c.sources = src.value.split(',').map((s) => s.trim()).filter(Boolean); S.dirty = true; refreshSeo(); });
       const note = el('input', { type: 'text', value: c.note || '', placeholder: 'What the research found, in one or two sentences', 'aria-label': 'Evidence summary', style: 'flex:1 1 100%' });
       note.addEventListener('input', () => { c.note = note.value; S.dirty = true; });
-      return el('div', { class: 'ed-claim' }, text, grade, note, src,
+      const pick = sourcePicker(S, (url) => { c.sources = [...new Set([...(c.sources || []), url])]; src.value = c.sources.join(', '); S.dirty = true; refreshSeo(); });
+      return el('div', { class: 'ed-claim' }, text, grade, note, src, pick,
         el('button', { type: 'button', class: 'btn plain', style: 'min-height:32px;color:var(--danger)', text: 'Remove claim', onclick: () => { S.cur.claims.splice(i, 1); S.dirty = true; paint(); refreshSeo(); } }));
     }));
   };
@@ -242,7 +257,7 @@ function contentEditor() {
 
   const write = el('div', { class: 'ed-write' }, title,
     S.preview
-      ? el('div', { class: 'prose', style: 'font-size:17px' }, (() => { const d = el('div', { style: 'display:contents' }); d.innerHTML = renderMarkdown(p.body); return d; })())
+      ? el('div', { class: 'prose', style: 'font-size:17px' }, (() => { const d = el('div', { style: 'display:contents' }); d.innerHTML = renderMarkdown(p.body, { link: (t, l) => { const hit = S.posts.find((x) => x.status === 'published' && (x.title.toLowerCase() === t.toLowerCase() || x.slug === t.toLowerCase())); return hit ? `<a href="/${hit.slug}/" target="_blank">${esc(l || hit.title)}</a>` : null; } }); return d; })())
       : el('div', { style: 'display:flex;flex-direction:column;gap:12px' }, bottom, author, verdict,
         el('div', { style: 'display:flex;flex-wrap:wrap;gap:10px;align-items:center' }, el('label', { for: 'cover-file', class: 'btn ghost', style: 'border-style:dashed;min-height:38px', text: p.cover_url ? 'Change photo' : 'Add cover photo' }), coverInput, p.cover_url ? el('button', { type: 'button', class: 'btn plain', text: 'Remove photo', onclick: () => { p.cover_url = ''; S.dirty = true; render(); } }) : null),
         coverImg, p.cover_url ? coverAlt : null, body),
@@ -330,9 +345,24 @@ function publishView() {
     el('a', { class: 'btn', href: REPO_ACTIONS, target: '_blank', rel: 'noopener', text: 'Open the deploy page on GitHub ↗' }));
 }
 
+const ctx = {
+  S,
+  render: () => render(),
+  openPost: (post) => {
+    if (!confirmLeave()) return;
+    S.section = FILTERS[S.section] ? S.section : 'all';
+    S.q = '';
+    S.cur = { ...post, claims: (post.claims || []).map((x) => ({ ...x })), _slugAuto: !post.id };
+    S.dirty = !post.id; S.preview = false;
+    render();
+  }
+};
+
 function render() {
   const main = el('main', { class: 'ed-main', id: 'main' });
   listEl = el('section', { class: 'ed-list', 'aria-label': 'Items' });
+  const ws = { research: researchView, sources: sourcesView };
+  if (!S.q && ws[S.section]) { root.replaceChildren(el('div', { class: 'ed' }, sidebar(), ...ws[S.section](ctx))); listEl = null; return; }
   const views = { reports: reportsView, members: membersView, waitlist: waitlistView, publish: publishView };
   if (!S.q && views[S.section]) { main.append(views[S.section]()); root.replaceChildren(el('div', { class: 'ed' }, sidebar(), main)); listEl = null; return; }
   main.append(contentEditor());
@@ -348,7 +378,8 @@ window.addEventListener('beforeunload', (e) => { if (S.dirty) { e.preventDefault
   S.me = await currentProfile();
   if (!S.me) return gate('Sign in with your editor email to manage Pet Primer.', true);
   if (!S.me.is_admin) return gate('This account is not an editor. Sign in with the editor email, or make this account an editor in Supabase.');
-  await Promise.all([loadPosts(), loadReports()]);
+  await Promise.all([loadPosts(), loadReports(), loadWorkspace(S)]);
   S.cur = S.posts[0] ? { ...S.posts[0], _slugAuto: false } : blankPost();
+  if (S.wsError) S.section = 'all';
   render();
 })();

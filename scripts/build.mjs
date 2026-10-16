@@ -94,10 +94,18 @@ ${sources.length ? `<div class="sources"><strong>Sources:</strong> ${sources.map
 </div>`;
 }
 
+// [[Note title]] in an article becomes a link to that published note; anything else is plain text.
+let LINK_INDEX = new Map();
+const linkOpts = { link: (target, label) => {
+  if (/^src:/i.test(target)) return null;
+  const hit = LINK_INDEX.get(target.trim().toLowerCase());
+  return hit ? `<a href="${urlOf(hit)}">${esc(label || hit.title)}</a>` : null;
+} };
+
 function noteBody(p) {
-  if (p.access !== 'members') return renderMarkdown(p.body);
+  if (p.access !== 'members') return renderMarkdown(p.body, linkOpts);
   const first = String(p.body || '').split(/\n{2,}/)[0] || '';
-  return renderMarkdown(first) + `<div class="panel" style="margin-top: 8px"><strong style="font-size: 18px">The rest of this note is for members.</strong><p class="muted">Memberships open soon: $9–15 a month or $79–129 a year.</p><a class="btn" href="/#membership" style="align-self: flex-start">Get notified</a></div>`;
+  return renderMarkdown(first, linkOpts) + `<div class="panel" style="margin-top: 8px"><strong style="font-size: 18px">The rest of this note is for members.</strong><p class="muted">Memberships open soon: $9–15 a month or $79–129 a year.</p><a class="btn" href="/#membership" style="align-self: flex-start">Get notified</a></div>`;
 }
 
 function notePage(p, all) {
@@ -152,6 +160,8 @@ async function build() {
   fs.copyFileSync(path.join(ROOT, 'CNAME'), path.join(OUT, 'CNAME'));
   fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
 
+  LINK_INDEX = new Map();
+  for (const p of posts) { LINK_INDEX.set(p.title.trim().toLowerCase(), p); LINK_INDEX.set(p.slug, p); }
   const notes = posts.filter((p) => p.kind !== 'page');
   const dogs = notes.filter((p) => p.pet === 'dogs' || p.pet === 'both');
   const cats = notes.filter((p) => p.pet === 'cats' || p.pet === 'both');
@@ -166,7 +176,7 @@ async function build() {
     ? faqs.slice(0, 6).map((p, i) => `<details class="faq"${i === 0 ? ' open' : ''}><summary>${esc(p.title)}</summary><div class="answer">
 <div style="display: flex; align-items: center; gap: 12px"><img src="/assets/img/golden-retriever.jpg" alt="" width="44" height="44" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; object-position: center 30%"><span style="display: flex; flex-direction: column; line-height: 1.3"><span style="font-weight: 600">Gilbert Jones</span><span class="small muted">${esc(p.author_note || 'Pet Primer')}</span></span></div>
 ${p.bottom_line ? `<p><strong>${esc(p.bottom_line)}</strong></p>` : ''}
-${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'))}
+${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), linkOpts)}
 <a href="${urlOf(p)}" style="font-weight: 600">Read the full answer and the evidence →</a>
 </div></details>`).join('\n')
     : '<p class="muted">The first answers are on their way.</p>';
