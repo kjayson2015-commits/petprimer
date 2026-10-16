@@ -132,7 +132,7 @@ async function load(reset) {
   if (!sb) { feed.replaceChildren(emptyState('The community board opens very soon. Follow Pet Primer on Instagram and X to hear first.', true)); return; }
   if (reset) state.page = 0;
   let q = sb.from('community_posts')
-    .select('id, type, pet, body, photo_url, created_at, author:profiles(display_name, handle, badge, avatar_url), comments(count), post_likes(count)')
+    .select('id, type, pet, body, photo_url, created_at, author:profiles!community_posts_author_id_fkey(display_name, handle, badge, avatar_url), comments(count), post_likes(count)')
     .eq('removed', false)
     .order('created_at', { ascending: false })
     .range(0, (state.page + 1) * PAGE - 1);

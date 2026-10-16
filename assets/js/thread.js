@@ -150,8 +150,8 @@ async function load() {
   if (!sb) { box.replaceChildren(el('p', { style: 'padding:24px', text: 'The community board opens very soon.' })); return; }
   if (!id) { box.replaceChildren(el('p', { style: 'padding:24px' }, 'This thread link is missing its post. ', el('a', { href: '/community/', text: 'Back to the board' }))); return; }
   const [{ data: post, error }, { data: comments }, likes] = await Promise.all([
-    sb.from('community_posts').select('id, type, pet, body, photo_url, created_at, author:profiles(display_name, handle, badge, avatar_url), post_likes(count)').eq('id', id).eq('removed', false).maybeSingle(),
-    sb.from('comments').select('id, parent_id, body, created_at, author:profiles(display_name, handle, badge, avatar_url), comment_likes(count)').eq('post_id', id).eq('removed', false).order('created_at'),
+    sb.from('community_posts').select('id, type, pet, body, photo_url, created_at, author:profiles!community_posts_author_id_fkey(display_name, handle, badge, avatar_url), post_likes(count)').eq('id', id).eq('removed', false).maybeSingle(),
+    sb.from('comments').select('id, parent_id, body, created_at, author:profiles!comments_author_id_fkey(display_name, handle, badge, avatar_url), comment_likes(count)').eq('post_id', id).eq('removed', false).order('created_at'),
     state.me ? sb.from('post_likes').select('post_id').eq('post_id', id).eq('user_id', state.me.id) : Promise.resolve({ data: [] })
   ]);
   if (error || !post) { box.replaceChildren(el('p', { style: 'padding:24px' }, 'This post was removed or does not exist. ', el('a', { href: '/community/', text: 'Back to the board' }))); return; }

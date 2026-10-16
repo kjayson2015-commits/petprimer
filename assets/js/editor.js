@@ -40,8 +40,8 @@ async function loadReports() {
   const postIds = reports.filter((r) => r.target_type === 'post').map((r) => r.target_id);
   const commentIds = reports.filter((r) => r.target_type === 'comment').map((r) => r.target_id);
   const [posts, comments] = await Promise.all([
-    postIds.length ? S.sb.from('community_posts').select('id, body, removed, author:profiles(display_name)').in('id', postIds) : { data: [] },
-    commentIds.length ? S.sb.from('comments').select('id, body, removed, post_id, author:profiles(display_name)').in('id', commentIds) : { data: [] }
+    postIds.length ? S.sb.from('community_posts').select('id, body, removed, author:profiles!community_posts_author_id_fkey(display_name)').in('id', postIds) : { data: [] },
+    commentIds.length ? S.sb.from('comments').select('id, body, removed, post_id, author:profiles!comments_author_id_fkey(display_name)').in('id', commentIds) : { data: [] }
   ]);
   const map = new Map([...(posts.data || []), ...(comments.data || [])].map((x) => [x.id, x]));
   S.reports = reports.map((r) => ({ ...r, target: map.get(r.target_id) }));
