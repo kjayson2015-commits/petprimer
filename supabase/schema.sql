@@ -40,7 +40,8 @@ $$;
 create or replace function public.protect_profile() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if not public.is_admin() then
+  -- auth.uid() is empty when you run SQL yourself in the dashboard; allow that.
+  if auth.uid() is not null and not public.is_admin() then
     new.is_admin := old.is_admin;
     new.badge := old.badge;
   end if;
