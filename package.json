@@ -1,0 +1,10 @@
+{
+  "name": "petprimer",
+  "private": true,
+  "type": "module",
+  "description": "Pet Primer — dog and cat care, graded by the evidence. petprimer.online",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/build.mjs && python3 -m http.server 8080 --directory _site"
+  }
+}

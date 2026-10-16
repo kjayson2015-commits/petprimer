@@ -1,0 +1,36 @@
+[
+  {
+    "slug": "why-does-my-dog-eat-grass",
+    "kind": "faq",
+    "pet": "dogs",
+    "access": "free",
+    "status": "published",
+    "title": "Why does my dog eat grass?",
+    "bottom_line": "In my experience, grass eating has been a normal mix of instinct, taste, digestion help and boredom. Talk to a vet if your dog eats large amounts or seems unwell.",
+    "author_note": "From my own dog · personal experience",
+    "body": "I first noticed it on a regular Tuesday morning. After his usual walk he headed straight for the patch of grass by the fence and started chewing like it was the most normal thing in the world.\n\nAt first I assumed he was just bored. He does the same thing on days I’m working late and he’s been inside longer than usual — he’ll wander over, sniff around, and graze for a few minutes. But he also does it right after we’ve been out playing, so it isn’t only boredom or anxiety.\n\nI’ve since watched him do it in different situations. Sometimes it’s the fresh spring growth; he’ll ignore the older grass and go straight for the newer, brighter blades, clearly enjoying the taste and texture. Other times he seems more deliberate about it, almost like he’s trying to settle his stomach. He rarely throws up afterward (I’ve only seen it a couple of times), but he’ll slow down and look more comfortable once he’s finished.\n\nIt lines up with what I’ve read about dogs and grass. Their wild ancestors ate plant material along with prey, and a bit of roughage seems to help keep things moving. For him it appears to be a mix of all of it — a little instinct, a little digestion help, occasional boredom, and sometimes just because he likes it.\n\nHe’s been doing it for years and stays happy and healthy, so I’ve mostly stopped worrying about it as long as he’s not eating large amounts or acting sick.",
+    "cover_url": "/assets/img/golden-retriever.jpg",
+    "cover_alt": "A smiling golden retriever in the sun",
+    "claims": [
+      {
+        "text": "Dogs’ wild ancestors ate plant material along with prey",
+        "grade": "Pending",
+        "note": "",
+        "sources": []
+      },
+      {
+        "text": "Some roughage helps keep a dog’s digestion moving",
+        "grade": "Pending",
+        "note": "",
+        "sources": []
+      }
+    ],
+    "focus_keyword": "why does my dog eat grass",
+    "seo_title": "Why Does My Dog Eat Grass? | Pet Primer",
+    "meta_desc": "A dog owner’s real experience with grass eating, what the research says about it, and when it’s worth calling a vet.",
+    "tags": "grass eating grazing plants vomiting stomach digestion boredom behavior",
+    "published_at": "2026-10-16T21:00:00Z",
+    "updated_at": "2026-10-16T21:00:00Z",
+    "reviewed_at": null
+  }
+]

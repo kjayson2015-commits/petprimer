@@ -1,0 +1,28 @@
+<div class="modal" id="community-modal" hidden>
+<button type="button" class="backdrop" aria-label="Close" data-close-modal></button>
+<div class="box" role="dialog" aria-modal="true" aria-labelledby="community-title">
+<div style="display: flex; gap: 14px; align-items: center">
+<img src="/assets/img/golden-retriever.jpg" alt="" width="56" height="56" style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover; object-position: center 30%">
+<div><h2 id="community-title" style="font-size: 26px">Join our community</h2><p class="small muted">Follow along, or join the board on this site.</p></div>
+</div>
+<ul class="social-list" data-social-list></ul>
+<a class="btn" href="/community/">Open the community board</a>
+<button type="button" class="btn plain" data-close-modal>Close</button>
+</div>
+</div>
+
+<div class="modal" id="signin-modal" hidden>
+<button type="button" class="backdrop" aria-label="Close" data-close-modal></button>
+<form class="box" role="dialog" aria-modal="true" aria-labelledby="signin-title" data-signin-form>
+<h2 id="signin-title" style="font-size: 26px">Sign in to Pet Primer</h2>
+<p class="muted">Enter your email and we’ll send you a sign-in link. No password needed.</p>
+<label for="signin-email" style="font-weight: 600">Email</label>
+<input id="signin-email" class="field" type="email" name="email" autocomplete="email" required>
+<button type="submit" class="btn">Send sign-in link</button>
+<p class="small muted" data-signin-status role="status"></p>
+<button type="button" class="btn plain" data-close-modal>Cancel</button>
+</form>
+</div>
+
+<div class="toast" data-toast role="status" hidden></div>
+<script type="module" src="/assets/js/app.js?v={{version}}"></script>
