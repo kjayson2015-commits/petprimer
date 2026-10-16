@@ -15,10 +15,15 @@
 <button type="button" class="backdrop" aria-label="Close" data-close-modal></button>
 <form class="box" role="dialog" aria-modal="true" aria-labelledby="signin-title" data-signin-form>
 <h2 id="signin-title" style="font-size: 26px">Sign in to Pet Primer</h2>
-<p class="muted">Enter your email and we’ll send you a sign-in link. No password needed.</p>
+<p class="muted" data-signin-intro>Enter your email and we’ll send you a sign-in link. No password needed.</p>
 <label for="signin-email" style="font-weight: 600">Email</label>
 <input id="signin-email" class="field" type="email" name="email" autocomplete="email" required>
-<button type="submit" class="btn">Send sign-in link</button>
+<div data-password-row hidden style="display: flex; flex-direction: column; gap: 8px">
+<label for="signin-password" style="font-weight: 600">Password</label>
+<input id="signin-password" class="field" type="password" name="password" autocomplete="current-password">
+</div>
+<button type="submit" class="btn" data-signin-submit>Send sign-in link</button>
+<button type="button" class="btn plain" data-password-toggle style="text-decoration: underline">Sign in with a password instead</button>
 <p class="small muted" data-signin-status role="status"></p>
 <button type="button" class="btn plain" data-close-modal>Cancel</button>
 </form>

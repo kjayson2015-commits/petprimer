@@ -127,12 +127,35 @@ export async function currentProfile() {
 
 const form = document.querySelector('[data-signin-form]');
 if (form) {
+  let usePassword = false;
+  const row = form.querySelector('[data-password-row]');
+  const toggle = form.querySelector('[data-password-toggle]');
+  const submitBtn = form.querySelector('[data-signin-submit]');
+  const intro = form.querySelector('[data-signin-intro]');
+  toggle.addEventListener('click', () => {
+    usePassword = !usePassword;
+    row.hidden = !usePassword;
+    form.password.required = usePassword;
+    submitBtn.textContent = usePassword ? 'Sign in' : 'Send sign-in link';
+    toggle.textContent = usePassword ? 'Email me a sign-in link instead' : 'Sign in with a password instead';
+    intro.textContent = usePassword ? 'Sign in with your email and password.' : 'Enter your email and we’ll send you a sign-in link. No password needed.';
+    if (usePassword) form.password.focus();
+  });
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const status = form.querySelector('[data-signin-status]');
     const sb = await getClient();
     if (!sb) { status.textContent = 'Accounts open soon. Follow us on Instagram or X meanwhile.'; return; }
     const email = form.email.value.trim();
+    if (usePassword) {
+      status.textContent = 'Signing in…';
+      const { error } = await sb.auth.signInWithPassword({ email, password: form.password.value });
+      if (error) { status.textContent = 'Could not sign in: ' + (error.message === 'Invalid login credentials' ? 'that email and password don’t match.' : error.message); return; }
+      status.textContent = 'Signed in.';
+      form.password.value = '';
+      setTimeout(() => location.reload(), 400);
+      return;
+    }
     status.textContent = 'Sending…';
     const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.href.split('#')[0] } });
     status.textContent = error ? ('Could not send the link: ' + error.message) : 'Check your inbox for the sign-in link.';
