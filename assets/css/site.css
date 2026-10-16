@@ -101,7 +101,7 @@ p { margin: 0; }
 mark { background: #FFF0B8; color: inherit; padding: 0 1px; border-radius: 3px; }
 
 /* Cards */
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
 .card { display: flex; flex-direction: column; gap: 12px; padding: 22px; background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--radius); text-decoration: none; color: var(--ink); }
 a.card:hover { border-color: var(--accent); color: var(--ink); }
 .card img.cover { width: 100%; height: 180px; object-fit: cover; border-radius: 10px; }

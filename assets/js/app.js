@@ -171,8 +171,13 @@ const STOP = new Set('why does my do the a an is it of to for and in on with how
 
 export function words(t) {
   return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean).map((w) => SYN[w] || w);
+    .replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean).map((w) => {
+      if (SYN[w]) return SYN[w];
+      if (w.length >= 4) { const k = SYN_KEYS.find((key) => near(w, key)); if (k) return SYN[k]; }
+      return w;
+    });
 }
+const SYN_KEYS = Object.keys(SYN).filter((k) => k.length >= 4);
 function near(a, b) {
   if (a === b) return true;
   if (a.length < 4 || Math.abs(a.length - b.length) > 1) return false;
