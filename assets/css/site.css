@@ -1039,3 +1039,15 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none !important; stroke: cu
 .more-foot .acct { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; }
 .more-foot .acct-actions .btn { flex: 0 1 auto; }
 @media (min-width: 1024px) { .side-acct .acct-actions { gap: 6px; } .side-acct .acct-actions .btn { padding: 0 10px; font-size: 13.5px; min-height: 36px; } }
+
+/* Light/dark switch: floats at the top-left, beside the logo, on computers */
+.side-top { display: none; }
+@media (min-width: 1024px) {
+  .side-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; padding-right: 2px; }
+  .side-top .side-brand { margin-bottom: 0 !important; }
+  .side-theme { width: 40px !important; height: 40px !important; flex: none; border-radius: 50% !important; background: #1D2D24; color: #CFDAD3 !important; border: 1px solid #2E4438 !important; box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
+  .side-theme:hover { background: #24382D; color: #fff !important; border-color: #3A5446 !important; }
+  .side-theme .theme-label { display: none !important; }
+  .app-side > .side-brand { display: none; }
+  .side-acct { grid-template-columns: minmax(0, 1fr); }
+}

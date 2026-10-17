@@ -69,7 +69,7 @@ function page({ pathName, nav, title, description, robots = 'index, follow', ogT
   const header = bare ? '' : PARTS.header.replace(new RegExp(`data-nav="${nav}"`), `data-nav="${nav}" aria-current="page"`);
   const footer = bare ? '' : PARTS.footer;
   const html = `<!doctype html>\n<html lang="en">\n<head>\n${head}</head>\n<body>\n${header}<main id="main">\n${content}\n</main>\n${footer}${PARTS.modals}</body>\n</html>\n`;
-  return toWebp(html.replaceAll('{{version}}', VERSION).replaceAll('{{year}}', String(YEAR)));
+  return toWebp(html.replaceAll('{{version}}', VERSION).replaceAll('{{year}}', String(YEAR)).replace(/(['"])\/assets\/js\/([\w-]+)\.js\1/g, `$1/assets/js/$2.js?v=${VERSION}$1`));
 }
 
 function write(rel, html) {
@@ -448,6 +448,12 @@ async function build() {
       } catch (e) { console.log('Kept the local photo for', rel); }
     }
   } catch (e) { /* no remote images listed */ }
+  // Version every script import so a new deploy never mixes old and new scripts from the browser cache.
+  const jsDir = path.join(OUT, 'assets/js');
+  for (const f of fs.readdirSync(jsDir).filter((x) => x.endsWith('.js'))) {
+    const file = path.join(jsDir, f);
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/(['"])\/assets\/js\/([\w-]+)\.js\1/g, `$1/assets/js/$2.js?v=${VERSION}$1`));
+  }
   if (SB_URL && SB_KEY) {
     const cfg = cfgText.replace(/supabaseUrl:\s*'[^']*'/, `supabaseUrl: '${SB_URL}'`).replace(/supabaseAnonKey:\s*'[^']*'/, `supabaseAnonKey: '${SB_KEY}'`);
     fs.writeFileSync(path.join(OUT, 'assets/js/config.js'), cfg);
