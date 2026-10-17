@@ -40,11 +40,14 @@ async function loadReports() {
   const reports = data || [];
   const postIds = reports.filter((r) => r.target_type === 'post').map((r) => r.target_id);
   const commentIds = reports.filter((r) => r.target_type === 'comment').map((r) => r.target_id);
-  const [posts, comments] = await Promise.all([
+  const listingIds = reports.filter((r) => r.target_type === 'listing').map((r) => r.target_id);
+  const [posts, comments, listings] = await Promise.all([
     postIds.length ? S.sb.from('community_posts').select('id, body, removed, author:profiles!community_posts_author_id_fkey(display_name)').in('id', postIds) : { data: [] },
-    commentIds.length ? S.sb.from('comments').select('id, body, removed, post_id, author:profiles!comments_author_id_fkey(display_name)').in('id', commentIds) : { data: [] }
+    commentIds.length ? S.sb.from('comments').select('id, body, removed, post_id, author:profiles!comments_author_id_fkey(display_name)').in('id', commentIds) : { data: [] },
+    listingIds.length ? S.sb.from('adopt_listings').select('id, name, about, removed, author:profiles!adopt_listings_owner_id_fkey(display_name)').in('id', listingIds) : { data: [] }
   ]);
-  const map = new Map([...(posts.data || []), ...(comments.data || [])].map((x) => [x.id, x]));
+  const listed = (listings.data || []).map((x) => ({ ...x, body: `${x.name}: ${x.about}` }));
+  const map = new Map([...(posts.data || []), ...(comments.data || []), ...listed].map((x) => [x.id, x]));
   S.reports = reports.map((r) => ({ ...r, target: map.get(r.target_id) }));
 }
 async function loadMembers() {
@@ -292,7 +295,7 @@ function contentEditor() {
 function reportsView() {
   const act = async (r, status) => {
     if (status === 'removed' && r.target) {
-      const table = r.target_type === 'post' ? 'community_posts' : 'comments';
+      const table = r.target_type === 'post' ? 'community_posts' : r.target_type === 'listing' ? 'adopt_listings' : 'comments';
       const res = await S.sb.from(table).update({ removed: true }).eq('id', r.target_id);
       if (res.error) return toast('Could not remove: ' + res.error.message);
     }
@@ -303,11 +306,11 @@ function reportsView() {
   return el('div', { style: 'padding:28px;display:flex;flex-direction:column;gap:16px;max-width:820px' },
     el('h2', { style: 'font-size:26px', text: 'Reported posts' }),
     ...(S.reports.length ? S.reports.map((r) => el('div', { class: 'panel', style: 'background:var(--ground)' },
-      el('span', { class: 'small muted', text: `${r.target_type === 'post' ? 'Post' : 'Reply'} by ${(r.target && r.target.author && r.target.author.display_name) || 'member'} · reported ${new Date(r.created_at).toLocaleDateString()}` }),
+      el('span', { class: 'small muted', text: `${r.target_type === 'post' ? 'Post' : r.target_type === 'listing' ? 'Adoption listing' : 'Reply'} by ${(r.target && r.target.author && r.target.author.display_name) || 'member'} · reported ${new Date(r.created_at).toLocaleDateString()}` }),
       el('p', { style: 'font-size:16px;white-space:pre-line', text: r.target ? r.target.body : '(already deleted)' }),
       el('span', { class: 'small' }, el('strong', { text: 'Reason: ' }), r.reason),
       el('span', { class: 'small' }, el('strong', { text: 'Status: ' }), r.status),
-      r.target && r.target_type === 'comment' ? el('a', { class: 'small', href: `/community/post/?id=${r.target.post_id}`, target: '_blank', text: 'Open the thread ↗' }) : r.target ? el('a', { class: 'small', href: `/community/post/?id=${r.target_id}`, target: '_blank', text: 'Open the post ↗' }) : null,
+      r.target && r.target_type === 'listing' ? el('a', { class: 'small', href: `/adopt/?pet=${r.target_id}`, target: '_blank', text: 'Open the listing ↗' }) : r.target && r.target_type === 'comment' ? el('a', { class: 'small', href: `/community/post/?id=${r.target.post_id}`, target: '_blank', text: 'Open the thread ↗' }) : r.target ? el('a', { class: 'small', href: `/community/post/?id=${r.target_id}`, target: '_blank', text: 'Open the post ↗' }) : null,
       r.status === 'open' ? el('div', { style: 'display:flex;flex-wrap:wrap;gap:10px' },
         el('button', { type: 'button', class: 'btn ghost', text: 'Keep post', onclick: () => act(r, 'kept') }),
         el('button', { type: 'button', class: 'btn ghost', style: 'background:var(--amber-soft);color:var(--amber-ink);border-color:var(--amber-soft)', text: 'Mark member warned', onclick: () => act(r, 'warned') }),

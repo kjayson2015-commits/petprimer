@@ -377,6 +377,8 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
     { kind: 'Page', title: 'Dog care notes', url: '/dogs/', tags: 'dog dogs puppy', summary: 'All dog notes.', text: '' },
     { kind: 'Page', title: 'Cat care notes', url: '/cats/', tags: 'cat cats kitten', summary: 'All cat notes.', text: '' },
     { kind: 'Page', title: 'Frequently asked questions', url: '/faq/', tags: 'faq questions answers', summary: 'Common dog and cat questions.', text: '' },
+    { kind: 'Adopt', title: 'Adopt a dog or cat', url: '/adopt/', tags: 'adopt adoption rehome rehoming rescue shelter new home puppy kitten find a pet', summary: 'Dogs and cats who need a home, listed free by owners and rescues.', text: '' },
+    { kind: 'Adopt', title: 'List a pet for adoption', url: '/adopt/list/', tags: 'rehome rehoming give away my dog cat list post adoption rescue', summary: 'Rehoming a pet? List them free.', text: '' },
     { kind: 'Community', title: 'Community board', url: '/community/', tags: 'community ask question photo help forum okay share', summary: 'Get a second opinion from other owners and share photos.', text: '' },
     { kind: 'Page', title: 'Who’s behind Pet Primer', url: '/about/', tags: 'about gilbert jones who vet veterinarian', summary: 'Gilbert Jones and why Pet Primer exists.', text: '' },
     ...CHECKER.items.map((it) => ({ kind: 'Can my pet eat this?', title: eatTitle(it), url: eatUrl(it), tags: `${it.name} ${it.aka || ''} eat safe toxic poison ${it.group}`, summary: `Dogs: ${EAT[it.dog][0]}. Cats: ${EAT[it.cat][0]}.`, text: `${it.dog_note || ''} ${it.cat_note || ''}` })),
@@ -391,7 +393,7 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
 
   // Sitemap + robots
   const today = new Date().toISOString().slice(0, 10);
-  const urls = [['/', today], ['/dogs/', today], ['/cats/', today], ['/faq/', today], ['/community/', today], ['/about/', today], ['/myths/', today], ['/how-we-grade/', today], ['/privacy/', today], ['/terms/', today], ['/emergency/', today], ['/tools/', today], ['/tools/chocolate-calculator/', today], ['/tools/dog-age/', today], ['/tools/myth-quiz/', today], ['/can-my-pet-eat/', today], [AUTHOR_URL, today],
+  const urls = [['/', today], ['/dogs/', today], ['/cats/', today], ['/faq/', today], ['/community/', today], ['/adopt/', today], ['/adopt/list/', today], ['/about/', today], ['/myths/', today], ['/how-we-grade/', today], ['/privacy/', today], ['/terms/', today], ['/emergency/', today], ['/tools/', today], ['/tools/chocolate-calculator/', today], ['/tools/dog-age/', today], ['/tools/myth-quiz/', today], ['/can-my-pet-eat/', today], [AUTHOR_URL, today],
     ...CHECKER.items.map((it) => [eatUrl(it), '2026-10-17']),
     ...posts.map((p) => [urlOf(p), String(p.updated_at || p.published_at || today).slice(0, 10)])];
   fs.writeFileSync(path.join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, d]) => `<url><loc>${SITE}${u}</loc><lastmod>${d}</lastmod></url>`).join('\n')}\n</urlset>\n`);

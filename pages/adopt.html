@@ -1,0 +1,64 @@
+<!--meta {"path": "/adopt/", "nav": "adopt", "title": "Adopt a Dog or Cat: Free Rehoming Listings | Pet Primer", "description": "Browse dogs and cats who need a new home in the US and UK, listed free by owners and rescues. Contact them directly. No selling, no deposits, no shipping fees.", "schema": "page"}-->
+<section class="wrap adopt-page">
+<div class="adopt-head">
+<div class="adopt-head-text">
+<p class="eyebrow">Adopt</p>
+<h1>Find a dog or cat who needs a home</h1>
+<p class="lede">Free listings from owners and rescues in the US and UK. Find a pet you like, then contact the person listing them directly. Pet Primer never charges anyone.</p>
+</div>
+<div class="adopt-head-cta">
+<a class="btn big" href="/adopt/list/">List a pet for adoption</a>
+<span class="small muted">Free. Takes about 3 minutes.</span>
+</div>
+</div>
+
+<div class="adopt-bar" role="group" aria-label="Filter pets">
+<div class="chips" role="group" aria-label="Pet">
+<button type="button" class="chip" data-adopt-pet="all" aria-pressed="true">Dogs and cats</button>
+<button type="button" class="chip" data-adopt-pet="dogs" aria-pressed="false">Dogs</button>
+<button type="button" class="chip" data-adopt-pet="cats" aria-pressed="false">Cats</button>
+</div>
+<div class="chips" role="group" aria-label="Country">
+<button type="button" class="chip" data-adopt-country="all" aria-pressed="true">US and UK</button>
+<button type="button" class="chip" data-adopt-country="US" aria-pressed="false">US</button>
+<button type="button" class="chip" data-adopt-country="UK" aria-pressed="false">UK</button>
+</div>
+<label for="adopt-area" class="sr-only">Search by town, city or state</label>
+<input id="adopt-area" class="field adopt-search" type="search" placeholder="Town, city or state" autocomplete="off" data-adopt-area>
+</div>
+
+<div class="adopt-layout">
+<div>
+<p class="small muted" data-adopt-count role="status" style="margin-bottom: 12px"></p>
+<div class="adopt-grid" data-adopt-grid aria-live="polite"><p class="muted">Loading pets…</p></div>
+<button type="button" class="btn ghost adopt-more" data-adopt-more hidden>Show more pets</button>
+</div>
+<aside class="adopt-aside" aria-label="Adopting safely">
+<div class="panel">
+<h2 style="font-size: 18px; font-family: var(--body)">Adopt safely</h2>
+<ul class="adopt-rules">
+<li>Meet the pet in person before you agree to anything</li>
+<li>Never pay a deposit, “holding” or shipping fee to someone you haven’t met</li>
+<li>Ask for vet records and see them yourself</li>
+<li>Meet somewhere public, or bring a friend</li>
+<li>Something feel off? Tap <strong>Report</strong> on the listing</li>
+</ul>
+<p class="small muted">Rescues may ask their normal adoption fee, paid to the rescue. Owners rehoming a pet here agree not to sell.</p>
+</div>
+<div class="panel">
+<h2 style="font-size: 18px; font-family: var(--body)">Just adopted?</h2>
+<p class="small" style="color: var(--ink-2)">Read up before your pet comes home, and ask other owners anything in the community.</p>
+<a class="small" href="/dogs/">Dog care notes</a>
+<a class="small" href="/cats/">Cat care notes</a>
+<a class="small" href="/can-my-pet-eat/">Can my pet eat this?</a>
+<a class="small" href="/community/">Community board</a>
+</div>
+</aside>
+</div>
+</section>
+
+<div class="modal" id="adopt-modal" hidden>
+<button type="button" class="backdrop" aria-label="Close" data-close-modal></button>
+<div class="box adopt-box" role="dialog" aria-modal="true" aria-labelledby="adopt-modal-title" data-adopt-detail></div>
+</div>
+<script type="module" src="/assets/js/adopt.js?v={{version}}"></script>

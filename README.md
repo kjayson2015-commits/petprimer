@@ -66,10 +66,17 @@ where id = (select id from auth.users where email = 'YOUR-EMAIL@example.com');
 
 ---
 
+### 5. Turn on Adopt (once)
+
+The Adopt pages (`/adopt/` and `/adopt/list/`) need their own tables. In Supabase **SQL Editor → New query**, paste everything from [`supabase/006_adoption.sql`](supabase/006_adoption.sql) and click **Run**. Until then the pages show “Adoption listings open very soon.”
+
+---
+
 ## Day to day
 
 - **Write or change a note:** `petprimer.online/editor/` → write → **Publish**. The site rebuilds itself about every 30 minutes. To update right away: GitHub → **Actions → Deploy site → Run workflow**.
 - **Moderate:** Editor → **Reported posts** → Keep, Mark member warned, or Remove.
+- **Adoption listings:** listings reported by three members hide themselves and show up in Editor → **Reported posts** with a link to the listing. Remove any that ask for money, deposits or shipping.
 - **Badges:** Editor → **Members and badges** → set Verified vet (after checking a license) or Experienced keeper.
 - **Waitlist emails:** Supabase → **Table Editor → waitlist** → export.
 - **Backups:** Supabase → **Database → Backups** (daily on paid plans). On the free plan, export important tables from the Table Editor now and then.
