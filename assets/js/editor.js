@@ -82,16 +82,26 @@ async function save(nextStatus) {
     const note = S.notes.find((n) => n.id === p._fromNoteId); if (note) note.post_id = res.data.id;
   }
   S.cur = { ...res.data, _slugAuto: false };
-  toast(nextStatus === 'published' ? 'Published. It appears on petprimer.online at the next site update.' : 'Saved.');
+  if (nextStatus === 'published') S.siteNotice = `“${res.data.title}” is published. It goes live on petprimer.online at the next site update.`;
+  else if (p.status === 'published' && nextStatus === 'draft') S.siteNotice = `“${res.data.title}” was unpublished. It comes off petprimer.online at the next site update.`;
+  toast(nextStatus === 'published' ? 'Published.' : nextStatus === 'draft' && p.status === 'published' ? 'Unpublished.' : 'Saved.');
   render();
 }
 
 async function remove() {
-  if (!S.cur.id) { S.cur = null; render(); return; }
-  if (!window.confirm(`Delete “${S.cur.title}” for good? This cannot be undone.`)) return;
+  if (!S.cur.id) { if (S.dirty && !window.confirm('Throw away this unsaved article?')) return; S.cur = null; S.dirty = false; render(); return; }
+  const wasLive = S.cur.status === 'published';
+  if (!window.confirm(`Delete “${S.cur.title || 'Untitled'}” for good?\n\nThis removes it from the editor${wasLive ? ' and from petprimer.online (within 30 minutes, or straight away if you update the site)' : ''}. It cannot be undone.`)) return;
   const { error } = await S.sb.from('posts').delete().eq('id', S.cur.id);
   if (error) return toast('Could not delete: ' + error.message);
-  await loadPosts(); S.cur = null; toast('Deleted.'); render();
+  const title = S.cur.title;
+  await loadPosts();
+  const left = S.posts.filter(FILTERS[S.section] || FILTERS.all);
+  S.cur = left[0] ? { ...left[0], claims: (left[0].claims || []).map((x) => ({ ...x })), _slugAuto: false } : null;
+  S.dirty = false;
+  if (wasLive) S.siteNotice = `“${title}” was deleted. It disappears from petprimer.online at the next site update.`;
+  toast('Deleted.');
+  render();
 }
 
 // ---------- SEO checks ----------
@@ -221,9 +231,20 @@ function claimsEditor() {
     wrap);
 }
 
+// Tells the editor when a publish, unpublish or delete will show on the site, with a shortcut to update now.
+function siteNoticeEl() {
+  if (!S.siteNotice) return null;
+  return el('div', { class: 'ed-notice', role: 'status' },
+    el('span', { text: S.siteNotice + ' The site updates by itself about every 30 minutes.' }),
+    el('span', { class: 'ed-notice-actions' },
+      el('a', { class: 'btn', href: REPO_ACTIONS, target: '_blank', rel: 'noopener', text: 'Update the site now ↗' }),
+      el('button', { type: 'button', class: 'btn plain', 'aria-label': 'Dismiss', text: 'Dismiss', onclick: () => { S.siteNotice = ''; render(); } })),
+    el('span', { class: 'small muted', style: 'flex-basis:100%', text: 'On GitHub, click “Run workflow”, then “Run workflow” again. The site is updated in about a minute.' }));
+}
+
 function contentEditor() {
   const p = S.cur;
-  if (!p) return el('div', { style: 'padding:40px;color:var(--ink-3)', text: 'Pick something on the left, or click “+ New note”.' });
+  if (!p) return el('div', { style: 'display:flex;flex-direction:column' }, siteNoticeEl(), el('div', { style: 'padding:40px;color:var(--ink-3)', text: 'Pick an article on the left to edit it, or click “+ New article”.' }));
   const sel = (key, opts) => { const s = el('select', {}, ...Object.entries(opts).map(([v, t]) => el('option', { value: v, text: t, selected: p[key] === v }))); s.addEventListener('change', () => { p[key] = s.value; S.dirty = true; render(); }); return s; };
   const c = STATUS_COLORS[p.status] || STATUS_COLORS.draft;
   const bar = el('div', { class: 'ed-bar' },
@@ -233,7 +254,8 @@ function contentEditor() {
     el('button', { type: 'button', class: 'btn plain', text: S.preview ? 'Edit' : 'Preview', onclick: () => { S.preview = !S.preview; render(); } }),
     p.status === 'published' ? el('button', { type: 'button', class: 'btn plain', text: 'Unpublish', onclick: () => save('draft') }) : el('button', { type: 'button', class: 'btn ghost', text: 'Save draft', onclick: () => save(p.status === 'review' ? 'review' : 'draft') }),
     p.status === 'published' ? null : el('button', { type: 'button', class: 'btn ghost', text: 'Ready for review', onclick: () => save('review') }),
-    el('button', { type: 'button', class: 'btn', text: p.status === 'published' ? 'Update' : 'Publish', onclick: () => save('published') }));
+    el('button', { type: 'button', class: 'btn', text: p.status === 'published' ? 'Update' : 'Publish', onclick: () => save('published') }),
+    el('button', { type: 'button', class: 'btn ed-delete', title: p.id ? 'Delete this article' : 'Throw away this unsaved article', text: p.id ? 'Delete' : 'Discard', onclick: remove }));
 
   const title = bind(el('input', { class: 'title-in', type: 'text', value: p.title, placeholder: 'Title', 'aria-label': 'Title' }), 'title', () => { if (p._slugAuto) { p.slug = slugify(p.title); const s = seoEl && seoEl.querySelector('[data-slug]'); if (s) s.value = p.slug; } });
   const bottom = bind(el('textarea', { class: 'small-ta meta-in', rows: 2, placeholder: 'Bottom line: the answer in one or two sentences. Shown at the top and in search results.', 'aria-label': 'Bottom line', style: 'padding:8px 10px;font-size:16px' }), 'bottom_line');
@@ -289,7 +311,7 @@ function contentEditor() {
     el('div', { 'data-checks': '', style: 'display:flex;flex-direction:column;gap:6px' }),
     el('p', { class: 'small muted', style: 'font-size:12px', text: `Added automatically when the site updates: sitemap entry, ${p.kind === 'faq' ? 'FAQ' : 'Article'} structured data for Google, share preview, breadcrumb and links to related notes.` }));
   setTimeout(refreshSeo, 0);
-  return el('div', { style: 'display:flex;flex-direction:column;min-height:100%' }, bar, el('div', { class: 'ed-cols' }, write, seoEl));
+  return el('div', { style: 'display:flex;flex-direction:column;min-height:100%' }, bar, siteNoticeEl(), el('div', { class: 'ed-cols' }, write, seoEl));
 }
 
 function reportsView() {

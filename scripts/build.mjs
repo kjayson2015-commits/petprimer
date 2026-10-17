@@ -34,9 +34,11 @@ async function loadPosts() {
     const res = await fetch(`${SB_URL}/rest/v1/posts?status=eq.published&select=*&order=published_at.desc`, { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } });
     if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
     const live = await res.json();
-    const slugs = new Set(live.map((p) => p.slug));
     console.log(`Loaded ${live.length} published posts from Supabase.`);
-    return [...live, ...seed.filter((p) => !slugs.has(p.slug))];
+    // The database is the source of truth: built-in starter articles are only a fallback for an
+    // empty database, so an article deleted or unpublished in the editor never comes back.
+    if (live.length) return live;
+    return seed;
   } catch (err) {
     console.warn('Could not reach Supabase, using starter content:', err.message);
     return seed;
