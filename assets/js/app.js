@@ -131,6 +131,27 @@ export async function shrinkImage(file, max = 1600) {
   document.addEventListener('click', (e) => { if (!phone.matches) mores.forEach((m) => { if (m.open && !m.contains(e.target)) m.open = false; }); });
 })();
 
+// ---------- Sidebar: highlight the page you're on ----------
+(function sideNav() {
+  const side = document.querySelector('.app-side');
+  if (!side || side.querySelector('[aria-current="page"]')) return;
+  const path = location.pathname;
+  const links = [...side.querySelectorAll('a[href^="/"]')].filter((a) => a.getAttribute('href') !== '/');
+  const exact = links.find((a) => a.getAttribute('href') === path);
+  const hit = exact || links.filter((a) => path.startsWith(a.getAttribute('href'))).sort((a, b) => b.getAttribute('href').length - a.getAttribute('href').length)[0];
+  if (hit) hit.setAttribute('aria-current', 'page');
+})();
+
+// ---------- Friendly greeting on the home page ----------
+(function greeting() {
+  const el2 = document.querySelector('[data-greeting]');
+  if (!el2) return;
+  const h = new Date().getHours();
+  const part = h < 5 ? 'Hello' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  el2.textContent = `${part} 👋`;
+  currentProfile().then((p) => { if (p && p.display_name) el2.textContent = `${part}, ${p.display_name} 👋`; }).catch(() => {});
+})();
+
 // ---------- Phone tab bar and "More" panel ----------
 (function tabBar() {
   const bar = document.querySelector('[data-tabbar]');

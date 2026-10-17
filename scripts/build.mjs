@@ -380,6 +380,19 @@ function adoptPreview(listings) {
   const live = listings.filter((l) => l.status === 'available').slice(0, 4);
   return live.length ? `<div class="adopt-grid" style="margin-top: 24px">${live.map(petTile).join('\n')}</div>` : '';
 }
+function adoptRow(listings) {
+  const live = listings.filter((l) => l.status === 'available').slice(0, 3);
+  const rehome = '<a class="dash-rehome" href="/adopt/list/"><strong>Rehoming a pet?</strong><span>List them free →</span></a>';
+  const find = '<a class="dash-rehome dash-find" href="/adopt/"><strong>Looking for a pet?</strong><span>Dogs and cats who need a home →</span></a>';
+  return (live.length ? live.map(petTile).join('\n') : find) + rehome;
+}
+function featuredCard(notes) {
+  const p = notes.find((x) => x.cover_url) || notes[0];
+  if (!p) return '';
+  const grade = (p.claims || []).map((c) => c.grade).find((g) => g && g !== 'Pending');
+  const label = grade ? `${grade} evidence` : `${PET[p.pet]} · ${KIND[p.kind]}`;
+  return `<a class="dash-feature" href="${urlOf(p)}">${p.cover_url ? `<img src="${esc(p.cover_url)}" alt="${esc(p.cover_alt || '')}" fetchpriority="high">` : ''}<span class="dash-feature-body"><span class="dash-badge">${esc(label)}</span><strong>${esc(p.title)}</strong><span>${esc(summaryOf(p).length > 120 ? summaryOf(p).slice(0, 118).replace(/\s\S*$/, '') + '…' : summaryOf(p))}</span></span></a>`;
+}
 function petPage(l, listings) {
   const petWord = A_PET[l.pet].toLowerCase();
   const section = l.pet === 'cats' ? ['Cats', '/adopt/cats/'] : ['Dogs', '/adopt/dogs/'];
@@ -479,8 +492,8 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
     content = content.replaceAll('{{DOG_COUNT}}', count(dogs, 'Dog')).replaceAll('{{CAT_COUNT}}', count(cats, 'Cat'))
       .replaceAll('{{LATEST}}', notes.slice(0, 6).map(card).join('\n') || '<p class="muted">The first notes are being written now.</p>')
       .replaceAll('{{QUIZ_DATA}}', quizData(notes)).replaceAll('{{EAT_COUNT}}', String(CHECKER.items.length))
-      .replaceAll('{{ADOPT_PREVIEW}}', adoptPreview(listings)).replaceAll('{{FAQ_LIST}}', faqList).replaceAll('{{MYTHS}}', mythSection).replaceAll('{{EXAMPLE_CLAIM}}', exampleClaim);
-    const schema = meta.schema === 'home' ? homeSchema : meta.schema === 'about' ? { '@context': 'https://schema.org', '@type': 'AboutPage', name: 'About Pet Primer', url: SITE + '/about/', mainEntity: { '@type': 'Person', name: 'Gilbert Jones', description: 'Dog owner and creator of Pet Primer' } } : null;
+      .replaceAll('{{ADOPT_ROW}}', adoptRow(listings)).replaceAll('{{FEATURED}}', featuredCard(notes)).replaceAll('{{FAQ_LIST}}', faqList).replaceAll('{{MYTHS}}', mythSection).replaceAll('{{EXAMPLE_CLAIM}}', exampleClaim);
+    const schema = meta.schema === 'home' ? homeSchema : meta.schema === 'contact' ? { '@context': 'https://schema.org', '@type': 'ContactPage', name: 'Contact Pet Primer', url: SITE + '/contact/', mainEntity: { '@type': 'Organization', name: 'Pet Primer', url: SITE + '/', email: 'petprimer.care@gmail.com', sameAs: ['https://www.instagram.com/petprimer.care/', 'https://x.com/PetPrimer1'] } } : meta.schema === 'about' ? { '@context': 'https://schema.org', '@type': 'AboutPage', name: 'About Pet Primer', url: SITE + '/about/', mainEntity: { '@type': 'Person', name: 'Gilbert Jones', description: 'Dog owner and creator of Pet Primer' } } : null;
     write(meta.path === '/404.html' ? '404.html' : meta.path, page({ pathName: meta.path, nav: meta.nav, title: meta.title, description: meta.description, robots: meta.noindex ? 'noindex, follow' : 'index, follow', schema, content, bare: meta.bare }));
   }
 
@@ -506,6 +519,7 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
     { kind: 'Adopt', title: 'List a pet for adoption', url: '/adopt/list/', tags: 'rehome rehoming give away my dog cat list post adoption rescue', summary: 'Rehoming a pet? List them free.', text: '' },
     ...listings.filter((l) => l.status === 'available').map((l) => ({ kind: 'Adopt', title: `${l.name}: ${A_PET[l.pet].toLowerCase()} for adoption in ${l.area}`, url: petUrl(l), tags: `adopt adoption rehome ${l.pet} ${A_PET[l.pet].toLowerCase()} ${l.area} ${l.country}`, summary: aFacts(l), text: String(l.about || '').slice(0, 400) })),
     { kind: 'Community', title: 'Community board', url: '/community/', tags: 'community ask question photo help forum okay share', summary: 'Get a second opinion from other owners and share photos.', text: '' },
+    { kind: 'Page', title: 'Contact Pet Primer', url: '/contact/', tags: 'contact email message instagram x twitter correction help support account', summary: 'Email petprimer.care@gmail.com or find us on Instagram and X.', text: '' },
     { kind: 'Page', title: 'Who’s behind Pet Primer', url: '/about/', tags: 'about gilbert jones who vet veterinarian', summary: 'Gilbert Jones and why Pet Primer exists.', text: '' },
     ...CHECKER.items.map((it) => ({ kind: 'Can my pet eat this?', title: eatTitle(it), url: eatUrl(it), tags: `${it.name} ${it.aka || ''} eat safe toxic poison ${it.group}`, summary: `Dogs: ${EAT[it.dog][0]}. Cats: ${EAT[it.cat][0]}.`, text: `${it.dog_note || ''} ${it.cat_note || ''}` })),
     { kind: 'Tool', title: 'Can my pet eat this?', url: '/can-my-pet-eat/', tags: 'eat safe toxic food plant poison checker', summary: 'Check foods and plants for dogs and cats.', text: '' },
@@ -519,7 +533,7 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
 
   // Sitemap + robots
   const today = new Date().toISOString().slice(0, 10);
-  const urls = [['/', today], ['/dogs/', today], ['/cats/', today], ['/faq/', today], ['/community/', today], ['/adopt/', today], ['/adopt/dogs/', today], ['/adopt/cats/', today], ['/adopt/list/', today], ['/about/', today], ['/myths/', today], ['/how-we-grade/', today], ['/privacy/', today], ['/terms/', today], ['/emergency/', today], ['/tools/', today], ['/tools/chocolate-calculator/', today], ['/tools/dog-age/', today], ['/tools/myth-quiz/', today], ['/can-my-pet-eat/', today], [AUTHOR_URL, today],
+  const urls = [['/', today], ['/dogs/', today], ['/cats/', today], ['/faq/', today], ['/community/', today], ['/adopt/', today], ['/adopt/dogs/', today], ['/adopt/cats/', today], ['/adopt/list/', today], ['/about/', today], ['/contact/', today], ['/myths/', today], ['/how-we-grade/', today], ['/privacy/', today], ['/terms/', today], ['/emergency/', today], ['/tools/', today], ['/tools/chocolate-calculator/', today], ['/tools/dog-age/', today], ['/tools/myth-quiz/', today], ['/can-my-pet-eat/', today], [AUTHOR_URL, today],
     ...CHECKER.items.map((it) => [eatUrl(it), '2026-10-17']),
     ...posts.map((p) => [urlOf(p), String(p.updated_at || p.published_at || today).slice(0, 10)]),
     ...listings.filter((l) => l.status === 'available').map((l) => [petUrl(l), String(l.updated_at || l.created_at).slice(0, 10)])];

@@ -1,22 +1,31 @@
 <!--meta {"path": "/", "nav": "home", "title": "Pet Primer — Dog and Cat Care, Graded by the Evidence", "description": "Practical dog and cat care notes from real owners, with every claim graded by how strong the research is. Ask questions and share photos in the community.", "schema": "home"}-->
-<div class="wrap">
-<section class="hero">
-<div class="hero-text">
-<p class="eyebrow">Research notes for dog and cat owners</p>
-<h1>Dog and cat care, graded by the evidence.</h1>
-<p class="lede">Every claim on this site shows how strong the research behind it is, where it came from, and when it was last checked. No guessing which advice to trust.</p>
-<form class="search" role="search" data-search action="/search/">
+<div class="wrap dash">
+<div class="dash-top">
+<div class="dash-head">
+<p class="dash-hi" data-greeting>Hello 👋</p>
+<h1>Dog and cat care, graded by the evidence</h1>
+</div>
+<form class="search dash-search" role="search" data-search action="/search/">
 <div class="search-row">
 <label for="home-search" class="sr-only">Search dog and cat notes</label>
-<input id="home-search" type="search" name="q" autocomplete="off" placeholder="Search a question, e.g. why does my dog eat grass">
-<button type="submit" class="btn" style="min-height: 52px; padding: 0 24px">Search</button>
+<input id="home-search" type="search" name="q" autocomplete="off" placeholder="Search a question">
+<button type="submit" class="btn">Search</button>
 </div>
 <div class="search-results" hidden aria-live="polite"></div>
 </form>
-<div class="ticks"><span>✓ Sources on every claim</span><span>✓ Review date on every note</span><span>✓ Written by a dog owner, not a sponsor</span></div>
 </div>
-<img class="hero-img" src="/assets/img/golden-retriever.jpg" width="494" height="619" alt="A smiling golden retriever in the sun" fetchpriority="high">
-</section>
+<div class="dash-cols">
+{{FEATURED}}
+<div class="dash-tiles">
+<a class="dash-tile" href="/can-my-pet-eat/"><span class="dash-ic" style="background: var(--accent-soft)" aria-hidden="true">🥕</span><strong>Can my pet eat this?</strong><span>{{EAT_COUNT}} foods &amp; plants</span></a>
+<a class="dash-tile" href="/tools/chocolate-calculator/"><span class="dash-ic" style="background: var(--amber-soft)" aria-hidden="true">🍫</span><strong>Chocolate calculator</strong><span>How worried to be</span></a>
+<a class="dash-tile" href="/tools/dog-age/"><span class="dash-ic" style="background: var(--q-bg)" aria-hidden="true">🎂</span><strong>Dog age</strong><span>In human years</span></a>
+<a class="dash-tile dash-red" href="/emergency/"><span class="dash-ic" style="background: var(--surface)" aria-hidden="true">☎️</span><strong>Poison help</strong><span>Call now, 24/7</span></a>
+</div>
+</div>
+<div class="dash-sec"><h2>Help me find a pet</h2><a href="/adopt/">See all →</a></div>
+<div class="dash-pets">{{ADOPT_ROW}}</div>
+<div class="ticks dash-ticks"><span>✓ Sources on every claim</span><span>✓ Review date on every note</span><span>✓ Written by a dog owner, not a sponsor</span></div>
 </div>
 
 <section class="section band" id="pets">
@@ -87,23 +96,6 @@
 <button type="button" class="btn big" data-open-community>Join community</button>
 </div>
 </div>
-</div>
-</section>
-
-<section class="section" style="padding-top: 0" id="adopt">
-<div class="wrap">
-<div class="community-cta adopt-cta">
-<img src="/assets/img/three-dogs.jpg" width="140" height="140" alt="Three happy dogs looking over a low wall" loading="lazy">
-<div class="text">
-<h2 style="font-size: 34px">Help me find a pet</h2>
-<p style="color: var(--ink-2); font-size: 18px">Dogs and cats who need a new home in the US and UK, listed free by owners and rescues. Contact them directly. No fees, ever.</p>
-</div>
-<div style="display: flex; flex-wrap: wrap; gap: 12px">
-<a class="btn big" href="/adopt/">Find a pet</a>
-<a class="btn ghost big" href="/adopt/list/">Rehome a pet</a>
-</div>
-</div>
-{{ADOPT_PREVIEW}}
 </div>
 </section>
 
