@@ -80,6 +80,33 @@ export async function shrinkImage(file, max = 1600) {
   return new Promise((res) => c.toBlob((b) => res(b), 'image/jpeg', 0.85));
 }
 
+// ---------- Light / dark mode ----------
+// Follows the device setting until the visitor picks one; the choice is remembered on this device.
+(function themeSwitch() {
+  const root = document.documentElement;
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+  const isDark = () => root.getAttribute('data-theme') === 'dark' || (!root.getAttribute('data-theme') && media.matches);
+  const paint = () => {
+    const dark = isDark();
+    root.classList.toggle('is-dark', dark);
+    document.querySelectorAll('[data-theme-toggle]').forEach((b) => {
+      const next = dark ? 'Light mode' : 'Dark mode';
+      b.setAttribute('aria-label', 'Switch to ' + next.toLowerCase()); b.title = 'Switch to ' + next.toLowerCase();
+      const label = b.querySelector('.theme-label'); if (label) label.textContent = next;
+    });
+  };
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-theme-toggle]');
+    if (!b) return;
+    const next = isDark() ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('pp-theme', next); } catch (err) { /* private mode */ }
+    paint();
+  });
+  media.addEventListener('change', paint);
+  paint();
+})();
+
 // ---------- Header menu ----------
 (function headerMenu() {
   const header = document.querySelector('.site-header');
