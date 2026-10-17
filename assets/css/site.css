@@ -412,7 +412,7 @@ html.is-dark .theme-toggle .i-moon { display: none; }
   [data-auth-slot] > span { flex-wrap: nowrap; }
 }
 @media (min-width: 1121px) and (max-width: 1400px) {
-  .auth-name { display: none; }
+  .site-header .auth-name { display: none; }
   .main-nav { gap: 4px 20px; }
   .site-menu { gap: 12px 20px; }
 }
@@ -753,17 +753,10 @@ a.pet-tile:hover { color: var(--ink); }
   .side-contact { background: #1D2D24; color: #CFDAD3; border: 1px solid #2E4438; }
   .side-contact svg { width: 17px; height: 17px; fill: currentColor; }
   .side-contact:hover, .side-contact[aria-current="page"] { background: #24382D; color: #8FD0AA; }
-  .side-acct { display: flex; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid #24382D; }
   .side-acct .theme-toggle { width: 44px; height: 44px; flex: none; color: #CFDAD3; border-color: #2E4438; }
   .side-acct .theme-toggle .theme-label { display: none; }
-  .side-acct [data-auth-slot] { flex: 1; min-width: 0; display: flex; }
-  .side-acct [data-auth-slot] > * { width: 100%; }
-  .side-acct .btn.ghost { background: transparent; color: #CFDAD3; border-color: #2E4438; width: 100%; }
+  .side-acct .btn.ghost { background: transparent; color: #CFDAD3; border-color: #2E4438; }
   .side-acct .btn.ghost:hover { background: #1D2D24; color: #fff; }
-  .side-acct [data-auth-slot] > span { display: flex !important; align-items: center; gap: 8px; }
-  .side-acct .auth-name { display: inline !important; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-  .side-acct .btn.plain { color: #93A69B; padding: 0 6px; }
-  .side-acct a.btn.ghost { width: auto; padding: 0 10px; }
   .wrap { padding-left: 32px; padding-right: 32px; }
   .site-footer .wrap { padding-left: 32px; padding-right: 32px; }
 }
@@ -1017,4 +1010,32 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none !important; stroke: cu
   .vd-range button { padding: 0 9px; font-size: 13px; }
 }
 /* Sidebar account area: room for Editor and Visitors buttons */
-@media (min-width: 1024px) { .side-acct [data-auth-slot] > span { flex-wrap: wrap; row-gap: 8px; } .side-acct a.btn.ghost { min-height: 36px; font-size: 13.5px; } }
+
+/* Signed-in account block (sidebar on computers, More panel on phones) */
+.acct { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.acct-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.acct-who .avatar { flex: none; }
+.acct-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.auth-name { font-weight: 700; font-size: 15px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-sub { font-size: 12.5px; color: var(--ink-3); }
+.acct-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.acct-actions .btn { flex: 1 1 auto; min-height: 38px; padding: 0 12px; font-size: 14px; }
+@media (min-width: 1024px) {
+  .side-acct { display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: center; gap: 12px 10px; padding-top: 14px; border-top: 1px solid #24382D; }
+  .side-acct .theme-toggle { grid-column: 2; grid-row: 1; }
+  .side-acct [data-auth-slot] { display: contents; }
+  .side-acct [data-auth-slot] > .btn { grid-column: 1; grid-row: 1; width: 100%; }
+  .side-acct .acct { display: contents; }
+  .side-acct .acct-who { grid-column: 1; grid-row: 1; }
+  .side-acct .acct-actions { grid-column: 1 / -1; grid-row: 2; }
+  .side-acct .auth-name { color: #fff; }
+  .side-acct .acct-sub { color: #93A69B; }
+  .side-acct .btn.ghost { background: transparent; color: #CFDAD3; border-color: #2E4438; }
+  .side-acct .btn.ghost:hover { background: #1D2D24; color: #fff; border-color: #3A5446; }
+  .side-acct .acct-out { color: #93A69B; }
+}
+.more-foot { align-items: center; }
+.more-foot [data-auth-slot] { margin-left: 0; flex: 1 1 100%; }
+.more-foot .acct { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.more-foot .acct-actions .btn { flex: 0 1 auto; }
+@media (min-width: 1024px) { .side-acct .acct-actions { gap: 6px; } .side-acct .acct-actions .btn { padding: 0 10px; font-size: 13.5px; min-height: 36px; } }

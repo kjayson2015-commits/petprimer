@@ -260,13 +260,18 @@ async function paintAuth() {
   const p = await currentProfile();
   if (!p) return;
   document.documentElement.classList.add('signed-in');
+  const name = p.display_name || 'You';
   for (const slot of slots) slot.replaceChildren(
-    el('span', { style: 'display:inline-flex;align-items:center;gap:8px' },
-      avatar(p, 34),
-      el('span', { class: 'small auth-name', style: 'font-weight:600', text: p.display_name || 'You' }),
-      p.is_admin ? el('a', { class: 'btn ghost', href: '/editor/', text: 'Editor' }) : null,
-      p.is_admin ? el('a', { class: 'btn ghost', href: '/dashboard/', text: 'Visitors' }) : null,
-      el('button', { type: 'button', class: 'btn plain', text: 'Sign out', onclick: async () => { await sb.auth.signOut(); location.reload(); } }))
+    el('span', { class: 'acct' },
+      el('span', { class: 'acct-who', title: name },
+        avatar(p, 36),
+        el('span', { class: 'acct-text' },
+          el('span', { class: 'auth-name', text: name }),
+          el('span', { class: 'acct-sub', text: p.is_admin ? 'Editor' : 'Signed in' }))),
+      el('span', { class: 'acct-actions' },
+        p.is_admin ? el('a', { class: 'btn ghost', href: '/editor/', text: 'Editor' }) : null,
+        p.is_admin ? el('a', { class: 'btn ghost', href: '/dashboard/', text: 'Visitors' }) : null,
+        el('button', { type: 'button', class: 'btn ghost acct-out', text: 'Sign out', onclick: async () => { await sb.auth.signOut(); location.reload(); } })))
   );
 }
 paintAuth();
