@@ -178,6 +178,22 @@ async function paintAuth() {
   );
 }
 paintAuth();
+
+// ---------- Private visit counter ----------
+// Records only the page and the referring website. No cookies, no IP, nothing personal.
+// Skipped for the editor, for local testing, and when the browser sends Do Not Track.
+(function countVisit() {
+  try {
+    if (navigator.doNotTrack === '1' || window.doNotTrack === '1') return;
+    if (location.pathname.startsWith('/editor') || !/petprimer\.online$/.test(location.hostname)) return;
+    if (/bot|crawl|spider|preview|headless/i.test(navigator.userAgent)) return;
+    let ref = '';
+    try { const r = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, '') : ''; ref = r && !/petprimer\.online$/.test(r) ? r : ''; } catch (e) { ref = ''; }
+    const send = () => getClient().then((sb) => sb && sb.from('page_views').insert({ path: location.pathname.slice(0, 200), referrer: ref.slice(0, 200) })).catch(() => {});
+    if (document.readyState === 'complete') setTimeout(send, 800); else window.addEventListener('load', () => setTimeout(send, 800), { once: true });
+  } catch (e) { /* counting is best-effort */ }
+})();
+
 getClient().then((sb) => { if (sb) sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_IN') paintAuth(); }); });
 
 // ---------- Search (typo tolerant, understands synonyms) ----------

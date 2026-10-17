@@ -1,0 +1,4 @@
+{
+  "_note": "Larger photos fetched at build time (the build server has internet). If a download fails, the small local copy is used. Photos from Pexels, free to use under the Pexels license.",
+  "assets/img/ginger-cat.jpg": "https://images.pexels.com/photos/16587671/pexels-photo-16587671.jpeg?auto=compress&cs=tinysrgb&w=1400"
+}

@@ -84,13 +84,14 @@ ${p.cover_url ? `<img class="cover" src="${esc(p.cover_url)}" alt="${esc(p.cover
 </a>`;
 }
 
+const hostOf = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
 function claimCard(c) {
   const sources = (c.sources || []).filter(Boolean);
   return `<div class="claim-card">
 <h3 style="font-size: 20px; line-height: 1.35; font-family: var(--body)">${esc(c.text)}</h3>
 <span class="pill grade ${gradeClass(c.grade)}" style="align-self: flex-start">${c.grade && c.grade !== 'Pending' ? esc(c.grade) + ' evidence' : 'Evidence review in progress'}</span>
 ${c.note ? `<p style="color: var(--ink-2)">${esc(c.note)}</p>` : ''}
-${sources.length ? `<div class="sources"><strong>Sources:</strong> ${sources.map((s, i) => `<a href="${esc(s)}" rel="noopener nofollow">Source ${i + 1}</a>`).join(' ')}</div>` : ''}
+${sources.length ? `<div class="sources"><strong>Sources:</strong> ${sources.map((s, i) => `<a href="${esc(s)}" rel="noopener nofollow">${esc(hostOf(s) || 'Source ' + (i + 1))}</a>`).join(' · ')}</div>` : ''}
 </div>`;
 }
 
@@ -153,6 +154,18 @@ async function build() {
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
   copyDir(path.join(ROOT, 'assets'), path.join(OUT, 'assets'));
+  // Swap in larger photos where the build server can download them.
+  try {
+    const remote = JSON.parse(read('content/remote-images.json'));
+    for (const [rel, url] of Object.entries(remote)) {
+      if (rel.startsWith('_')) continue;
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+        const buf = Buffer.from(await res.arrayBuffer());
+        if (res.ok && buf.length > 40000 && /image\//.test(res.headers.get('content-type') || '')) { fs.writeFileSync(path.join(OUT, rel), buf); console.log('Larger photo:', rel, Math.round(buf.length / 1024) + ' KB'); }
+      } catch (e) { console.log('Kept the local photo for', rel); }
+    }
+  } catch (e) { /* no remote images listed */ }
   if (SB_URL && SB_KEY) {
     const cfg = cfgText.replace(/supabaseUrl:\s*'[^']*'/, `supabaseUrl: '${SB_URL}'`).replace(/supabaseAnonKey:\s*'[^']*'/, `supabaseAnonKey: '${SB_KEY}'`);
     fs.writeFileSync(path.join(OUT, 'assets/js/config.js'), cfg);
@@ -206,7 +219,7 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
   write('/dogs/', listingPage({ pathName: '/dogs/', nav: 'dogs', title: 'Dogs', h1: 'Dog care notes', intro: 'Behavior, diet, health and everyday care for dogs: real experience first, with every claim graded by the evidence.', items: dogs, seoTitle: 'Dog Care Notes Graded by the Evidence | Pet Primer', seoDesc: 'Practical dog care notes on behavior, diet and health, written from real experience with every claim graded by how strong the research is.' }));
   write('/cats/', listingPage({ pathName: '/cats/', nav: 'cats', title: 'Cats', h1: 'Cat care notes', intro: 'Behavior, diet, health and indoor life for cats, researched and graded the same way.', items: cats, seoTitle: 'Cat Care Notes Graded by the Evidence | Pet Primer', seoDesc: 'Practical cat care notes on behavior, diet, health and indoor life, with every claim graded by how strong the research is.' }));
   write('/faq/', listingPage({ pathName: '/faq/', nav: 'faq', title: 'FAQ', h1: 'Frequently asked questions', intro: 'The questions dog and cat owners ask most, answered from real experience and checked against the research.', items: faqs, seoTitle: 'Dog and Cat Questions Answered | Pet Primer FAQ', seoDesc: 'Answers to the questions dog and cat owners ask most, from real experience, with the evidence behind each claim graded in plain words.' }));
-  if (myths.length) write('/myths/', listingPage({ pathName: '/myths/', nav: '', title: 'Myth checks', h1: 'Myth checks', intro: 'Popular dog and cat advice, checked against the research.', items: myths, seoTitle: 'Dog and Cat Myths Checked | Pet Primer', seoDesc: 'Popular dog and cat care advice checked against the research and graded in plain words.' }));
+  write('/myths/', listingPage({ pathName: '/myths/', nav: '', title: 'Myth checks', h1: 'Myth checks', intro: 'Popular dog and cat advice, checked against the research.', items: myths, seoTitle: 'Dog and Cat Myths Checked | Pet Primer', seoDesc: 'Popular dog and cat care advice checked against the research and graded in plain words.' }));
 
   // Search index
   const index = [
@@ -222,7 +235,7 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
 
   // Sitemap + robots
   const today = new Date().toISOString().slice(0, 10);
-  const urls = [['/', today], ['/dogs/', today], ['/cats/', today], ['/faq/', today], ['/community/', today], ['/about/', today], ...(myths.length ? [['/myths/', today]] : []),
+  const urls = [['/', today], ['/dogs/', today], ['/cats/', today], ['/faq/', today], ['/community/', today], ['/about/', today], ['/myths/', today], ['/how-we-grade/', today], ['/privacy/', today], ['/terms/', today],
     ...posts.map((p) => [urlOf(p), String(p.updated_at || p.published_at || today).slice(0, 10)])];
   fs.writeFileSync(path.join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, d]) => `<url><loc>${SITE}${u}</loc><lastmod>${d}</lastmod></url>`).join('\n')}\n</urlset>\n`);
   fs.writeFileSync(path.join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /editor/\nDisallow: /search/\n\nSitemap: ${SITE}/sitemap.xml\n`);

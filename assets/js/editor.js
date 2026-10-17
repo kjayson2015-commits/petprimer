@@ -19,7 +19,7 @@ const FILTERS = {
   drafts: (p) => p.status !== 'published',
   pages: (p) => p.kind === 'page'
 };
-const LABELS = { research: 'Research notes', sources: 'Source library', all: 'All content', dogs: 'Dogs', cats: 'Cats', faq: 'Frequently asked', myth: 'Myth checks', drafts: 'Drafts and review', pages: 'Pages', reports: 'Reported posts', members: 'Members and badges', waitlist: 'Membership waitlist', publish: 'Publish the site' };
+const LABELS = { research: 'Research notes', sources: 'Source library', all: 'All content', dogs: 'Dogs', cats: 'Cats', faq: 'Frequently asked', myth: 'Myth checks', drafts: 'Drafts and review', pages: 'Pages', reports: 'Reported posts', members: 'Members and badges', waitlist: 'Membership waitlist', visitors: 'Visitors', publish: 'Publish the site' };
 
 function gate(msg, withButton) {
   root.replaceChildren(el('div', { class: 'gate' },
@@ -125,7 +125,7 @@ function sidebar() {
     el('div', { class: 'grp' }, el('span', { class: 'lbl', text: 'Research (private)' }), navBtn('research', S.notes.length), navBtn('sources', S.sources.length)),
     el('div', { class: 'grp' }, el('span', { class: 'lbl', text: 'Articles readers see' }), ...['all', 'dogs', 'cats', 'faq', 'myth', 'drafts', 'pages'].map((id) => navBtn(id, S.posts.filter(FILTERS[id]).length))),
     el('div', { class: 'grp' }, el('span', { class: 'lbl', text: 'Community' }), navBtn('reports', S.reports.filter((r) => r.status === 'open').length), navBtn('members')),
-    el('div', { class: 'grp' }, el('span', { class: 'lbl', text: 'Business' }), navBtn('waitlist'), navBtn('publish')),
+    el('div', { class: 'grp' }, el('span', { class: 'lbl', text: 'Business' }), navBtn('visitors'), navBtn('waitlist'), navBtn('publish')),
     el('span', { style: 'margin-top:auto', class: 'small muted' }, 'Signed in as ', el('strong', { text: S.me.display_name || 'you' })));
 }
 
@@ -136,6 +136,7 @@ async function go(id) {
   if (id === 'reports') await loadReports();
   if (id === 'members' || id === 'waitlist') await loadMembers();
   if (id === 'research' || id === 'sources') await loadWorkspace(S);
+  if (id === 'visitors') await loadVisitors();
   if (FILTERS[id]) S.cur = S.cur && FILTERS[id](S.cur) ? S.cur : (S.posts.filter(FILTERS[id])[0] ? { ...S.posts.filter(FILTERS[id])[0], _slugAuto: false } : null);
   render();
 }
@@ -337,6 +338,53 @@ function waitlistView() {
     el('p', { class: 'muted', text: 'People who asked to hear when memberships ($9–15 a month or $79–129 a year) open. The full email list is in Supabase → Table editor → waitlist, where you can export it as a spreadsheet.' }));
 }
 
+async function loadVisitors() {
+  const since = new Date(Date.now() - 30 * 864e5).toISOString();
+  const { data, error } = await S.sb.from('page_views').select('path, referrer, created_at').gte('created_at', since).order('created_at', { ascending: false }).limit(20000);
+  S.views = error ? null : (data || []);
+  S.viewsError = error ? error.message : '';
+}
+
+function visitorsView() {
+  const wrap = el('div', { style: 'padding:28px;display:flex;flex-direction:column;gap:22px;max-width:860px' },
+    el('h2', { style: 'font-size:26px', text: 'Visitors' }));
+  if (!S.views) {
+    wrap.append(el('p', { class: 'muted', text: S.viewsError ? 'The visitor counter is not set up yet (' + S.viewsError + '). Run supabase/003_starter_content.sql in the Supabase SQL editor.' : 'Loading…' }));
+    return wrap;
+  }
+  const v = S.views, now = Date.now(), day = 864e5;
+  const within = (d) => v.filter((x) => now - new Date(x.created_at).getTime() < d * day).length;
+  const stat = (label, n) => el('div', { style: 'flex:1 1 150px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:4px' },
+    el('span', { class: 'small muted', text: label }), el('strong', { style: 'font-size:30px;font-family:var(--display)', text: n.toLocaleString() }));
+  wrap.append(el('div', { style: 'display:flex;flex-wrap:wrap;gap:12px' }, stat('Today', within(1)), stat('Last 7 days', within(7)), stat('Last 30 days', v.length)));
+
+  // Daily bars for the last 14 days
+  const days = [...Array(14)].map((_, i) => { const d = new Date(now - (13 - i) * day); return d.toISOString().slice(0, 10); });
+  const perDay = Object.fromEntries(days.map((d) => [d, 0]));
+  v.forEach((x) => { const d = new Date(x.created_at).toISOString().slice(0, 10); if (d in perDay) perDay[d]++; });
+  const max = Math.max(1, ...Object.values(perDay));
+  wrap.append(el('section', { style: 'display:flex;flex-direction:column;gap:8px' },
+    el('h3', { style: 'font-size:17px;font-family:var(--body)', text: 'Page views per day (last 14 days)' }),
+    el('div', { style: 'display:flex;align-items:flex-end;gap:6px;height:140px;padding:8px 0;border-bottom:1px solid var(--line)', role: 'img', 'aria-label': 'Page views per day for the last 14 days' },
+      ...days.map((d) => el('div', { title: d + ': ' + perDay[d], style: `flex:1;min-width:8px;border-radius:4px 4px 0 0;background:var(--accent);height:${Math.max(2, Math.round(perDay[d] / max * 120))}px` }))),
+    el('div', { class: 'small muted', style: 'display:flex;justify-content:space-between' }, el('span', { text: days[0].slice(5) }), el('span', { text: 'today' }))));
+
+  const top = (key, label, empty) => {
+    const counts = {};
+    v.forEach((x) => { const k = x[key] || ''; if (k) counts[k] = (counts[k] || 0) + 1; });
+    const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    return el('section', { style: 'flex:1 1 320px;display:flex;flex-direction:column;gap:6px' },
+      el('h3', { style: 'font-size:17px;font-family:var(--body)', text: label }),
+      ...(rows.length ? rows.map(([k, n]) => el('div', { style: 'display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)' },
+        key === 'path' ? el('a', { href: k, target: '_blank', rel: 'noopener', text: k }) : el('span', { text: k }), el('strong', { text: String(n) }))) : [el('p', { class: 'small muted', text: empty })]));
+  };
+  wrap.append(el('div', { style: 'display:flex;flex-wrap:wrap;gap:28px' },
+    top('path', 'Top pages (30 days)', 'No visits yet.'),
+    top('referrer', 'Where visitors came from', 'No outside websites yet. Visits from Google, Instagram and X will show here.')));
+  wrap.append(el('p', { class: 'small muted', text: 'Counts page loads on petprimer.online. Your own editor visits are not counted, and nothing personal is stored.' }));
+  return wrap;
+}
+
 function publishView() {
   return el('div', { style: 'padding:28px;display:flex;flex-direction:column;gap:14px;max-width:720px' },
     el('h2', { style: 'font-size:26px', text: 'Publish the site' }),
@@ -363,7 +411,7 @@ function render() {
   listEl = el('section', { class: 'ed-list', 'aria-label': 'Items' });
   const ws = { research: researchView, sources: sourcesView };
   if (!S.q && ws[S.section]) { root.replaceChildren(el('div', { class: 'ed' }, sidebar(), ...ws[S.section](ctx))); listEl = null; return; }
-  const views = { reports: reportsView, members: membersView, waitlist: waitlistView, publish: publishView };
+  const views = { reports: reportsView, members: membersView, waitlist: waitlistView, visitors: visitorsView, publish: publishView };
   if (!S.q && views[S.section]) { main.append(views[S.section]()); root.replaceChildren(el('div', { class: 'ed' }, sidebar(), main)); listEl = null; return; }
   main.append(contentEditor());
   root.replaceChildren(el('div', { class: 'ed' }, sidebar(), listEl, main));
