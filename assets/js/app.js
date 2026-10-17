@@ -148,8 +148,8 @@ export async function shrinkImage(file, max = 1600) {
   if (!el2) return;
   const h = new Date().getHours();
   const part = h < 5 ? 'Hello' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-  el2.textContent = `${part} 👋`;
-  currentProfile().then((p) => { if (p && p.display_name) el2.textContent = `${part}, ${p.display_name} 👋`; }).catch(() => {});
+  el2.textContent = part;
+  currentProfile().then((p) => { if (p && p.display_name) el2.textContent = `${part}, ${p.display_name}`; }).catch(() => {});
 })();
 
 // ---------- Phone tab bar and "More" panel ----------

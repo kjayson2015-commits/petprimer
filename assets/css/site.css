@@ -881,3 +881,29 @@ a.pet-tile:hover { color: var(--ink); }
 @media (min-width: 760px) { .contact-main { grid-column: span 2; } }
 
 .side-brand span { white-space: nowrap; }
+
+/* ================= Line icons (Lucide, ISC licence — see assets/LICENSE-lucide.txt) ================= */
+svg.i { width: 20px; height: 20px; flex: none; fill: none !important; stroke: currentColor; }
+.side-nav a svg.i { width: 19px; height: 19px; color: #9FB2A7; }
+.side-nav a:hover svg.i { color: #fff; }
+.side-nav a[aria-current="page"] svg.i { color: #8FD0AA; }
+.side-emergency svg.i, .side-contact svg.i, .top-emergency svg.i, .top-contact svg.i { width: 17px; height: 17px; }
+.more-emergency svg.i { width: 19px; height: 19px; }
+.tabbar svg.i { width: 23px; height: 23px; stroke-width: 1.9; }
+.more-x svg.i { width: 18px; height: 18px; }
+.more-x { display: grid; place-items: center; }
+.more-find-ic { width: 44px; height: 44px; border-radius: 14px; background: rgba(255, 255, 255, .16); display: grid; place-items: center; font-size: 0; flex: none; }
+.more-find-ic svg.i { width: 24px; height: 24px; }
+.dash-ic { font-size: 0; }
+.dash-ic svg.i { width: 23px; height: 23px; stroke-width: 1.9; }
+.dash-ic-g { background: var(--accent-soft); color: var(--accent); }
+.dash-ic-a { background: var(--amber-soft); color: var(--amber-ink); }
+.dash-ic-p { background: var(--q-bg); color: var(--q-ink); }
+.dash-ic-t { background: var(--tip-bg); color: var(--tip-ink); }
+.dash-ic-r { background: var(--surface); color: var(--danger-solid); border: 1px solid var(--danger-line); }
+:root.is-dark .dash-ic-r { color: var(--danger); }
+.contact-main .dash-ic { color: var(--on-accent); }
+.tool-card .tool-icon { width: 48px; height: 48px; border-radius: 15px; font-size: 0; display: grid; place-items: center; }
+.tool-card .tool-icon svg.i { width: 25px; height: 25px; }
+.ticks span { display: inline-flex; align-items: center; gap: 6px; }
+.ticks svg.i { width: 17px; height: 17px; stroke-width: 2.2; color: var(--accent); }
