@@ -1,0 +1,44 @@
+<!--meta {"path": "/tools/chocolate-calculator/", "nav": "tools", "title": "Dog Ate Chocolate? Chocolate Toxicity Calculator | Pet Primer", "description": "Work out roughly how serious it is when a dog eats chocolate, from its weight, the type of chocolate and how much. Uses Merck Veterinary Manual figures.", "schema": "page"}-->
+<article class="narrow article">
+<nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> › <a href="/tools/">Tools</a> › Chocolate risk calculator</nav>
+<p class="eyebrow">Tool · Dogs</p>
+<h1>Chocolate risk calculator</h1>
+<p class="lede">Your dog ate chocolate. Enter its weight, the kind of chocolate and roughly how much, to see where it falls on the danger scale.</p>
+<div class="notice notice-danger" role="note" style="margin: 18px 0 24px"><span>Whatever the result, <strong>call your vet or a <a href="/emergency/">pet poison line</a></strong> if you’re unsure. This is a rough guide only.</span></div>
+<form class="tool-form" data-choc>
+<div class="tool-row">
+<label for="c-weight">Dog’s weight</label>
+<div class="tool-pair"><input id="c-weight" class="field" type="number" inputmode="decimal" min="0.5" max="120" step="0.1" required placeholder="e.g. 12"><select id="c-wunit" class="field" aria-label="Weight unit"><option value="kg">kg</option><option value="lb">lb</option></select></div>
+</div>
+<div class="tool-row">
+<label for="c-type">Kind of chocolate</label>
+<select id="c-type" class="field">
+<option value="0.04">White chocolate</option>
+<option value="2.3" selected>Milk chocolate (most sweets and bars)</option>
+<option value="5.5">Dark or semi-sweet chocolate</option>
+<option value="15.5">Unsweetened baking chocolate</option>
+<option value="28.5">Cocoa powder</option>
+<option value="5.5">Not sure (counts as dark, to be safe)</option>
+</select>
+</div>
+<div class="tool-row">
+<label for="c-amount">Amount eaten</label>
+<div class="tool-pair"><input id="c-amount" class="field" type="number" inputmode="decimal" min="0" max="5000" step="1" required placeholder="e.g. 50"><select id="c-aunit" class="field" aria-label="Amount unit"><option value="g">grams</option><option value="oz">ounces</option></select></div>
+<span class="small muted">A standard bar is usually 40 to 100 g (about 1.5 to 3.5 oz). Check the wrapper.</span>
+</div>
+<button type="submit" class="btn">Check the risk</button>
+</form>
+<div class="tool-result" data-choc-result aria-live="polite" hidden></div>
+<h2 style="margin-top: 40px">How it works</h2>
+<div class="prose">
+<p>Chocolate contains theobromine, which dogs clear very slowly. The calculator multiplies the amount eaten by a typical theobromine content for that kind of chocolate, then divides by your dog’s weight. The Merck Veterinary Manual gives these levels:</p>
+<ul>
+<li><strong>About 20 mg per kg:</strong> mild signs such as vomiting, diarrhoea and drinking a lot</li>
+<li><strong>40 to 50 mg per kg:</strong> heart effects such as a racing or irregular heartbeat</li>
+<li><strong>60 mg per kg or more:</strong> seizures are possible</li>
+</ul>
+<p>Real chocolate varies by brand, and the calculator ignores caffeine, fat (which can trigger pancreatitis) and wrappers, so treat the result as a starting point for a call to your vet. Read more in <a href="/is-chocolate-dangerous-for-dogs/">Is chocolate dangerous for dogs?</a></p>
+<p class="small muted">Source: <a href="https://www.merckvetmanual.com/toxicology/food-hazards/chocolate-toxicosis-in-animals" rel="noopener nofollow">Merck Veterinary Manual, chocolate toxicosis</a>. Not reviewed by a vet.</p>
+</div>
+</article>
+<script type="module" src="/assets/js/tools.js?v={{version}}"></script>

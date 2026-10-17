@@ -1,6 +1,6 @@
 // Pet Primer community — an X-style public timeline for dog and cat owners.
 import { getClient, el, avatar, toast, currentProfile, shrinkImage } from '/assets/js/app.js';
-import { TYPES, postRow, POST_SELECT, likedSetFor, profileHref, icon } from '/assets/js/social.js';
+import { TYPES, postRow, POST_SELECT, likedSetFor, profileHref, threadHref, icon } from '/assets/js/social.js';
 
 const PAGE = 20;
 const MAX = 1000;
@@ -12,7 +12,7 @@ const state = { tab: 'latest', type: 'all', pet: 'all', q: params.get('q') || ''
 
 function emptyState(text, withSocial) {
   return el('div', { class: 'empty' },
-    el('img', { src: '/assets/img/corgi.png', alt: '', width: 120, height: 133, style: 'width:120px;height:auto' }),
+    el('img', { src: '/assets/img/paws-empty.svg', alt: '', width: 132, height: 99, class: 'empty-art' }),
     el('p', { text }),
     withSocial ? el('button', { type: 'button', class: 'btn', 'data-open-community': '', text: 'Follow us meanwhile' }) : null);
 }
@@ -117,6 +117,29 @@ async function load(reset) {
   more.hidden = top || data.length < (state.page + 1) * PAGE;
 }
 
+// Pet of the Week: the most-liked Show & tell photo from the last 7 days.
+async function petOfTheWeek(sb) {
+  const box = document.querySelector('[data-potw]');
+  if (!box || !sb) return;
+  const { data, error } = await sb.from('community_posts').select(POST_SELECT).eq('removed', false).eq('type', 'show')
+    .not('photo_url', 'is', null).gte('created_at', new Date(Date.now() - 7 * 864e5).toISOString()).limit(100);
+  const likes = (p) => (p.post_likes && p.post_likes[0] && p.post_likes[0].count) || 0;
+  const best = !error && (data || []).slice().sort((a, b) => likes(b) - likes(a) || b.created_at.localeCompare(a.created_at))[0];
+  if (!best) {
+    box.replaceChildren(el('div', { class: 'panel' },
+      el('span', { class: 'potw-tag', text: 'Pet of the Week' }),
+      el('p', { class: 'small', style: 'color: var(--ink-2)', text: 'Post a Show & tell photo of your dog or cat. The most-liked photo each week is featured here.' })));
+    return;
+  }
+  const a = best.author || {};
+  box.replaceChildren(el('a', { class: 'panel potw', href: threadHref(best.id), style: 'text-decoration: none; color: var(--ink)' },
+    el('img', { src: best.photo_url, alt: `Pet of the Week, shared by ${a.display_name || 'a member'}`, loading: 'lazy', width: 400, height: 300 }),
+    el('span', { class: 'potw-body' },
+      el('span', { class: 'potw-tag', text: 'Pet of the Week' }),
+      el('span', { class: 'small', style: 'color: var(--ink-2)', text: best.body.length > 90 ? best.body.slice(0, 88) + '…' : best.body }),
+      el('span', { class: 'small muted', text: `${a.display_name || 'Member'} · ${likes(best)} ${likes(best) === 1 ? 'like' : 'likes'}` }))));
+}
+
 function paintTabs() {
   document.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === state.tab ? 'true' : 'false'));
 }
@@ -152,4 +175,5 @@ more.addEventListener('click', () => { state.page++; load(false); });
   slot.replaceChildren(composer());
   paintTabs();
   load(true);
+  getClient().then(petOfTheWeek).catch(() => {});
 })();

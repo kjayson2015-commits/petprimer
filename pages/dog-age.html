@@ -1,0 +1,23 @@
+<!--meta {"path": "/tools/dog-age/", "nav": "tools", "title": "Dog Age in Human Years Calculator (2020 Study) | Pet Primer", "description": "Convert your dog’s age to human years with the formula from a 2020 study of DNA ageing in Labradors, instead of the old “times seven” rule.", "schema": "page"}-->
+<article class="narrow article">
+<nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> › <a href="/tools/">Tools</a> › Dog age calculator</nav>
+<p class="eyebrow">Tool · Dogs</p>
+<h1>How old is my dog in human years?</h1>
+<p class="lede">The “one dog year equals seven human years” rule is a myth. A 2020 study found dogs age very fast early on, then slow down.</p>
+<form class="tool-form" data-age>
+<div class="tool-row">
+<label for="a-years">Your dog’s age</label>
+<div class="tool-pair"><input id="a-years" class="field" type="number" inputmode="numeric" min="0" max="25" step="1" required placeholder="Years" aria-label="Years"><input id="a-months" class="field" type="number" inputmode="numeric" min="0" max="11" step="1" placeholder="Months" aria-label="Months"></div>
+</div>
+<button type="submit" class="btn">Work it out</button>
+</form>
+<div class="tool-result" data-age-result aria-live="polite" hidden></div>
+<h2 style="margin-top: 40px">Where the formula comes from</h2>
+<div class="prose">
+<p>Researchers compared chemical changes to DNA that build up with age (called methylation) in more than 100 Labrador retrievers and in people. They matched the patterns into this formula: <strong>human age = 16 × ln(dog age) + 31</strong>, where ln is the natural logarithm.</p>
+<p>It means a 1-year-old dog is roughly like a 31-year-old person in DNA terms, a 4-year-old like a 53-year-old, and after that ageing slows down.</p>
+<div class="claim-card" style="margin-top: 8px"><h3 style="font-size: 18px; font-family: var(--body)">How good is this formula?</h3><span class="pill grade grade-early" style="align-self: flex-start">Early evidence</span><p style="color: var(--ink-2)">It comes from a single study of one breed. Large breeds tend to live shorter lives than small ones, so it may fit some dogs better than others. It works best for dogs aged 1 and over.</p></div>
+<p class="small muted">Sources: <a href="https://www.sciencefocus.com/news/new-trick-to-calculate-your-old-dogs-age" rel="noopener nofollow">BBC Science Focus on the 2020 Cell Systems study</a>. Not reviewed by a vet.</p>
+</div>
+</article>
+<script type="module" src="/assets/js/tools.js?v={{version}}"></script>

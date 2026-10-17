@@ -1,0 +1,86 @@
+{
+  "posts": [
+    {
+      "slug": "halloween-sweets-and-pets",
+      "kind": "note",
+      "pet": "both",
+      "title": "Halloween sweets and pets: chocolate, xylitol and wrappers",
+      "bottom_line": "The two big Halloween risks for dogs are chocolate and xylitol, the sweetener in sugar-free gum and sweets. Xylitol can drop a dog’s blood sugar within 30 minutes. Keep the sweet bowl out of reach, and call a vet or pet poison line straight away if your dog gets into it.",
+      "author_note": "Research summary · sources below",
+      "cover_url": "/assets/img/three-dogs.jpg",
+      "cover_alt": "Three dogs sitting together",
+      "body": "Halloween puts bowls of sweets at nose height for a few days, and dogs are very good at finding them. Cats are much less interested in sweets, so most of this note is about dogs.\n\n## 1. Chocolate\n\nChocolate contains **theobromine**, which dogs clear very slowly. The darker the chocolate, the more dangerous it is:\n\n- **White chocolate** has almost none.\n- **Milk chocolate**, the kind in most fun-size bars, has some, so a small dog eating several bars is a real worry.\n- **Dark chocolate**, **baking chocolate** and **cocoa powder** are the most dangerous.\n\nSigns usually start 6 to 12 hours after eating: restlessness, vomiting, panting, a racing heart and, with large amounts, shaking or seizures. Use the [chocolate risk calculator](/tools/chocolate-calculator/) to get a rough idea of how serious it is, then ring your vet. More detail is in [[Is chocolate dangerous for dogs?]].\n\n## 2. Xylitol in sugar-free sweets and gum\n\nXylitol is a sweetener in sugar-free gum, mints and sweets, and also in some peanut butters, baked goods, toothpastes and chewable vitamins. It is sometimes listed as **birch sugar**.\n\nIn dogs, xylitol triggers a big release of insulin, so blood sugar drops fast. According to the Merck Veterinary Manual:\n\n- Doses above about **100 mg per kg** of body weight can cause dangerously low blood sugar.\n- Doses above about **500 mg per kg** can cause liver failure in some dogs.\n- Signs can start within **30 minutes**. With some gums they are delayed by **12 to 18 hours**, so a dog that seems fine at first may still be in trouble.\n\nSigns of low blood sugar include weakness, wobbliness, vomiting, collapse and seizures. Different gums contain very different amounts of xylitol, so keep the packet and read it to the vet or poison line.\n\nThe Merck manual says dogs are the only pets reported to be poisoned by xylitol. That is good news for cats, but sugar-free sweets are still no treat for them.\n\n## 3. Raisins and wrappers\n\n- **Raisins** turn up in snack boxes and trail mix. They can cause sudden kidney failure in dogs, with no known safe amount. See [[Can dogs eat grapes or raisins?]].\n- **Wrappers, foil and lolly sticks** can cause choking or block the gut, especially when a dog swallows a whole stash at once.\n\n## How to keep Halloween safe\n\n- Keep the sweet bowl and children’s collected sweets up high or behind a closed door.\n- Ask children to empty their bags on a table, not the floor.\n- Check visitors’ bags and coats. Sugar-free gum in a handbag is a common way dogs find xylitol.\n- If the doorbell keeps ringing, give your dog a quiet room so it doesn’t slip out of the front door.\n- Choose dog treats for your dog, and keep human sweets for people.\n\n## If your dog eats sweets\n\nCall your vet or a pet poison line straight away, before signs appear. Have ready: what was eaten, roughly how much, when, and your dog’s weight. Don’t make your dog sick unless a vet tells you to. Our [emergency page](/emergency/) has the US and UK poison line numbers.",
+      "claims": [
+        {
+          "text": "Xylitol can cause dangerously low blood sugar in dogs",
+          "grade": "Strong",
+          "note": "The Merck Veterinary Manual puts the level at about 100 mg per kg of body weight, with liver failure possible in some dogs above about 500 mg per kg.",
+          "sources": ["https://www.merckvetmanual.com/toxicology/food-hazards/xylitol"]
+        },
+        {
+          "text": "Signs of xylitol poisoning can be delayed",
+          "grade": "Strong",
+          "note": "Signs often begin within 30 minutes, but with some sugar-free gums they may not appear for 12 to 18 hours.",
+          "sources": ["https://www.merckvetmanual.com/toxicology/food-hazards/xylitol"]
+        },
+        {
+          "text": "Cats are not known to be poisoned by xylitol",
+          "grade": "Moderate",
+          "note": "The Merck Veterinary Manual says dogs are the only domestic species in which xylitol poisoning has been reported. Absence of reports is not the same as proven safety.",
+          "sources": ["https://www.merckvetmanual.com/toxicology/food-hazards/xylitol"]
+        },
+        {
+          "text": "Dark and baking chocolate are far more dangerous than milk chocolate",
+          "grade": "Strong",
+          "note": "Baking chocolate has about 7 times, and cocoa powder about 12 times, the theobromine of milk chocolate.",
+          "sources": ["https://www.merckvetmanual.com/toxicology/food-hazards/chocolate-toxicosis-in-animals"]
+        }
+      ],
+      "tags": "halloween, xylitol, chocolate, sweets, candy, sugar-free gum, poison",
+      "focus_keyword": "halloween candy dogs xylitol",
+      "seo_title": "Halloween Sweets and Pets: Chocolate, Xylitol and Wrappers",
+      "meta_desc": "Why chocolate and xylitol in sugar-free sweets are the biggest Halloween dangers for dogs, how fast signs start, and what to do if your dog eats some."
+    },
+    {
+      "slug": "fireworks-scared-dog-or-cat",
+      "kind": "note",
+      "pet": "both",
+      "title": "Fireworks and Bonfire Night: helping a scared dog or cat",
+      "bottom_line": "About one in five dogs is strongly afraid of fireworks, and the fear tends to grow with age. Plan ahead: settle pets indoors before dark, give them a hiding place, mask the noise, and let them choose whether to hide or come to you. If your pet panics every year, talk to your vet before the season starts.",
+      "author_note": "Research summary · sources below",
+      "cover_url": "/assets/img/dog-and-cat.jpg",
+      "cover_alt": "A dog and a cat resting together",
+      "body": "Fireworks season is long: Halloween, Diwali and Bonfire Night in the UK, New Year’s Eve everywhere, and the Fourth of July in the US. For a frightened pet, it can mean weeks of sudden bangs.\n\n## How common is the fear?\n\nIn a Norwegian survey of more than 5,000 dogs from 17 breeds, owners said about **21% of dogs showed strong or very strong fear of fireworks**, and the share rose with age. It varied a lot by breed, from about 8% to 32%. It is a survey of what owners noticed, so treat the numbers as a guide.\n\n## Signs your pet is scared\n\n- **Dogs:** trembling, panting or drooling, pacing, hiding, whining or barking, clinging to you, a tucked tail, refusing food.\n- **Cats:** hiding, eating or drinking less, pacing, going to the toilet indoors, over-grooming.\n\nSome of these signs can also mean illness, so check with your vet if you’re unsure.\n\n## Before the fireworks\n\n- **Make a safe den** in a quiet room: a covered crate or bed for a dog, a box or a high shelf for a cat.\n- **Check microchip details** are up to date. Frightened pets bolt.\n- **Walk dogs in daylight**, before fireworks usually start.\n- **Bring cats in before dark**, with a litter tray, food and water inside.\n- **Talk to your vet early** if your pet panics every year. Some medicines must be started before the fireworks, and your vet can refer you to a behaviourist.\n\n## During the fireworks\n\n- Close windows, curtains and cat flaps, and turn the lights on to soften the flashes.\n- Play music or the TV to mask the bangs.\n- **Let your pet choose.** If it wants to hide, let it. If your dog comes to you for comfort, comfort it. Don’t pull a cat out of hiding or hold it.\n- Stay calm and act normally. Your pet reads your mood.\n- Don’t leave a frightened dog home alone, and never tell it off for accidents or fear.\n\n## After the season\n\nGo back to your normal routine. If the fear was severe, work on it over the year rather than the week before: a vet or clinical behaviourist can set up gradual sound training, which takes time but can help.\n\nIn the UK, Dogs Trust runs a free behaviour support line on **0303 003 6666**.",
+      "claims": [
+        {
+          "text": "Around one in five dogs is strongly afraid of fireworks",
+          "grade": "Moderate",
+          "note": "A survey of 5,257 dogs from 17 breeds found about 21% showed strong or very strong fear of fireworks, from about 8% in the least affected breed to 32% in the most. A large study, but it relies on owner reports.",
+          "sources": ["https://avsab.org/science-friday-noise-sensitivity-in-17-dog-breeds/"]
+        },
+        {
+          "text": "Fear of fireworks tends to increase as dogs get older",
+          "grade": "Moderate",
+          "note": "In the same survey, older dogs were more likely to be afraid of loud noises.",
+          "sources": ["https://avsab.org/science-friday-noise-sensitivity-in-17-dog-breeds/"]
+        },
+        {
+          "text": "Comforting a scared dog makes its fear worse",
+          "grade": "Not supported",
+          "note": "Dogs Trust advises comforting a dog that seeks reassurance and says ignoring it doesn’t help. We haven’t found good evidence that comfort reinforces fear.",
+          "sources": ["https://www.dogstrust.org.uk/dog-advice/life-with-your-dog/seasonal/fireworks"]
+        },
+        {
+          "text": "Cats are safest kept indoors during fireworks",
+          "grade": "Early",
+          "note": "This is expert welfare guidance from Cats Protection, based on the risk of frightened cats running off, rather than the result of a study.",
+          "sources": ["https://www.cats.org.uk/fireworks-and-bonfire-night"]
+        }
+      ],
+      "tags": "fireworks, bonfire night, noise fear, anxiety, fourth of july, new year",
+      "focus_keyword": "dog scared of fireworks",
+      "seo_title": "Dog or Cat Scared of Fireworks? What Helps on Bonfire Night",
+      "meta_desc": "How common firework fear is in dogs, the signs in dogs and cats, and what to do before, during and after fireworks, based on research and UK welfare charity advice."
+    }
+  ]
+}

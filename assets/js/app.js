@@ -111,21 +111,24 @@ export async function shrinkImage(file, max = 1600) {
 (function headerMenu() {
   const header = document.querySelector('.site-header');
   const toggle = document.querySelector('[data-menu-toggle]');
-  const more = document.querySelector('.nav-more');
+  const mores = [...document.querySelectorAll('.nav-more')];
   if (!header || !toggle) return;
-  const phone = window.matchMedia('(max-width: 1120px)');
+  const phone = window.matchMedia('(max-width: 1240px)');
   const setOpen = (open) => { header.classList.toggle('menu-open', open); toggle.setAttribute('aria-expanded', String(open)); };
   toggle.addEventListener('click', () => setOpen(!header.classList.contains('menu-open')));
-  // On phones the About links are always listed in the open menu.
-  const syncMore = () => { if (more) more.open = phone.matches; };
+  // On phones the dropdown links are always listed in the open menu.
+  const syncMore = () => mores.forEach((m) => { m.open = phone.matches; });
   syncMore();
   phone.addEventListener('change', () => { syncMore(); if (!phone.matches) setOpen(false); });
+  // Only one dropdown open at a time on wide screens.
+  mores.forEach((m) => m.addEventListener('toggle', () => { if (m.open && !phone.matches) mores.forEach((o) => { if (o !== m) o.open = false; }); }));
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (header.classList.contains('menu-open')) { setOpen(false); toggle.focus(); }
-    if (more && more.open && !phone.matches) { more.open = false; more.querySelector('summary').focus(); }
+    const open = mores.find((m) => m.open);
+    if (open && !phone.matches) { open.open = false; open.querySelector('summary').focus(); }
   });
-  document.addEventListener('click', (e) => { if (more && more.open && !phone.matches && !more.contains(e.target)) more.open = false; });
+  document.addEventListener('click', (e) => { if (!phone.matches) mores.forEach((m) => { if (m.open && !m.contains(e.target)) m.open = false; }); });
 })();
 
 // ---------- Modals ----------
@@ -205,7 +208,7 @@ if (form) {
       return;
     }
     status.textContent = 'Sending…';
-    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.href.split('#')[0] } });
+    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.href.split('#')[0], data: { age_16_plus: true } } });
     status.textContent = error ? ('Could not send the link: ' + error.message) : 'Check your inbox for the sign-in link.';
   });
 }
@@ -217,6 +220,7 @@ async function paintAuth() {
   if (!sb) return;
   const p = await currentProfile();
   if (!p) return;
+  document.documentElement.classList.add('signed-in');
   slot.replaceChildren(
     el('span', { style: 'display:inline-flex;align-items:center;gap:8px' },
       avatar(p, 34),

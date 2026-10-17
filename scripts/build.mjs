@@ -20,8 +20,15 @@ const SB_URL = (process.env.SUPABASE_URL || fromCfg('supabaseUrl')).replace(/\/r
 const SB_KEY = process.env.SUPABASE_ANON_KEY || fromCfg('supabaseAnonKey');
 
 // ---------- Content ----------
+const AUTHOR_URL = '/authors/gilbert-jones/';
+const CHECKER = JSON.parse(read('content/checker.json'));
+// Seasonal articles ship with the site so they appear even before they are added to the database.
+const SEASONAL = JSON.parse(read('content/seasonal-articles.json')).posts.map((p) => ({ access: 'free', status: 'published', verdict: null, published_at: '2026-10-17T08:00:00Z', updated_at: '2026-10-17T08:00:00Z', reviewed_at: '2026-10-17T08:00:00Z', ...p }));
+
 async function loadPosts() {
-  const seed = JSON.parse(read('content/seed.json'));
+  const seed = [...JSON.parse(read('content/seed.json')), ...SEASONAL];
+  // For local testing without the database: PP_TEST_SEED=1 adds the starter articles.
+  if (process.env.PP_TEST_SEED) seed.push(...JSON.parse(read('content/starter-articles.json')).posts.map((p) => ({ access: 'free', status: 'published', published_at: '2026-10-16T08:00:00Z', reviewed_at: '2026-10-16T08:00:00Z', verdict: p.kind === 'myth' ? 'Not supported' : null, ...p })));
   if (!SB_URL || !SB_KEY) { console.log('No Supabase settings: building with starter content only.'); return seed; }
   try {
     const res = await fetch(`${SB_URL}/rest/v1/posts?status=eq.published&select=*&order=published_at.desc`, { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } });
@@ -47,6 +54,10 @@ const jsonld = (obj) => `<script type="application/ld+json">${JSON.stringify(obj
 
 const PARTS = { head: read('partials/head.html'), header: read('partials/header.html'), footer: read('partials/footer.html'), modals: read('partials/modals.html') };
 
+// Serve WebP wherever a WebP copy of a local image exists (social-card images stay JPEG).
+const WEBP = new Set(fs.readdirSync(path.join(ROOT, 'assets/img')).filter((f) => f.endsWith('.webp')).map((f) => f.slice(0, -5)));
+const toWebp = (html) => html.replace(/(src=["'])\/assets\/img\/([\w-]+)\.(?:jpe?g|png)(?=["'?])/g, (m, a, n) => (WEBP.has(n) ? `${a}/assets/img/${n}.webp` : m));
+
 function page({ pathName, nav, title, description, robots = 'index, follow', ogType = 'website', ogImage, schema, content, bare }) {
   const head = PARTS.head
     .replaceAll('{{title}}', esc(title)).replaceAll('{{description}}', esc(description))
@@ -56,7 +67,7 @@ function page({ pathName, nav, title, description, robots = 'index, follow', ogT
   const header = bare ? '' : PARTS.header.replace(new RegExp(`data-nav="${nav}"`), `data-nav="${nav}" aria-current="page"`);
   const footer = bare ? '' : PARTS.footer;
   const html = `<!doctype html>\n<html lang="en">\n<head>\n${head}</head>\n<body>\n${header}<main id="main">\n${content}\n</main>\n${footer}${PARTS.modals}</body>\n</html>\n`;
-  return html.replaceAll('{{version}}', VERSION).replaceAll('{{year}}', String(YEAR));
+  return toWebp(html.replaceAll('{{version}}', VERSION).replaceAll('{{year}}', String(YEAR)));
 }
 
 function write(rel, html) {
@@ -109,6 +120,38 @@ function noteBody(p) {
   return renderMarkdown(first, linkOpts) + `<div class="panel" style="margin-top: 8px"><strong style="font-size: 18px">The rest of this note is for members.</strong><p class="muted">Memberships open soon: $9–15 a month or $79–129 a year.</p><a class="btn" href="/#membership" style="align-self: flex-start">Get notified</a></div>`;
 }
 
+// Gives each section heading an id and builds the "On this page" list and reading time.
+function withContents(html, p) {
+  const used = new Set();
+  const heads = [];
+  const out = html.replace(/<h2>([\s\S]*?)<\/h2>/g, (m, inner) => {
+    let id = inner.replace(/<[^>]+>/g, '').toLowerCase().replace(/&[a-z]+;|&#\d+;/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'section';
+    while (used.has(id)) id += '-2';
+    used.add(id); heads.push([id, inner.replace(/<[^>]+>/g, '').replace(/^\d+\.\s+/, '')]);
+    return `<h2 id="${id}">${inner}</h2>`;
+  });
+  const words = (plainText(p.body) + ' ' + (p.claims || []).map((c) => `${c.text} ${c.note || ''}`).join(' ')).split(/\s+/).filter(Boolean).length;
+  const minutes = Math.max(1, Math.round(words / 220));
+  const showToc = heads.length >= 3 && words >= 450;
+  const toc = showToc ? `<nav class="toc" aria-labelledby="toc-h"><h2 id="toc-h" class="toc-h">On this page</h2><ol>${heads.map(([id, t]) => `<li><a href="#${id}">${t}</a></li>`).join('')}${(p.claims || []).length ? '<li><a href="#claims-h">What the evidence says</a></li>' : ''}</ol></nav>` : '';
+  return { html: out, toc, minutes };
+}
+
+function madeBox(p) {
+  const n = (p.claims || []).length;
+  const srcCount = new Set((p.claims || []).flatMap((c) => c.sources || []).filter(Boolean)).size;
+  return `<section class="made" aria-labelledby="made-h">
+<h2 id="made-h">How this article was made</h2>
+<ul>
+<li>Written by <a href="${AUTHOR_URL}">Gilbert Jones</a>, who keeps dogs and is not a vet.</li>
+<li>${n ? `Built from ${srcCount} ${srcCount === 1 ? 'source' : 'sources'}, linked under each of the ${n} graded ${n === 1 ? 'claim' : 'claims'} above.` : 'Based on owner experience; no graded claims yet.'} Grades follow <a href="/how-we-grade/">our method</a>.</li>
+<li>Not reviewed by a veterinarian. It does not replace a vet who has examined your pet.</li>
+<li>First published ${esc(date(p.published_at || p.updated_at))}${p.reviewed_at ? ` · Evidence last checked ${esc(date(p.reviewed_at))}` : ''}.</li>
+<li>Spotted a mistake or a better study? Email <a href="mailto:petprimer.care@gmail.com?subject=${encodeURIComponent('Correction: ' + p.title)}">petprimer.care@gmail.com</a>. Corrections are noted on the page.</li>
+</ul>
+</section>`;
+}
+
 function notePage(p, all) {
   const related = all.filter((x) => x.slug !== p.slug && x.kind !== 'page' && (x.pet === p.pet || x.pet === 'both' || p.pet === 'both')).slice(0, 3);
   const section = p.kind === 'faq' ? ['FAQ', '/faq/'] : p.pet === 'cats' ? ['Cats', '/cats/'] : ['Dogs', '/dogs/'];
@@ -116,20 +159,23 @@ function notePage(p, all) {
     { '@type': 'ListItem', position: 1, name: 'Home', item: SITE + '/' },
     { '@type': 'ListItem', position: 2, name: section[0], item: SITE + section[1] },
     { '@type': 'ListItem', position: 3, name: p.title, item: SITE + urlOf(p) }] };
-  const article = { '@context': 'https://schema.org', '@type': 'Article', headline: p.title, description: p.meta_desc || summaryOf(p), image: abs(p.cover_url), datePublished: p.published_at, dateModified: p.updated_at || p.published_at, author: { '@type': 'Person', name: 'Gilbert Jones', url: SITE + '/about/' }, publisher: { '@type': 'Organization', name: 'Pet Primer', logo: { '@type': 'ImageObject', url: SITE + '/assets/img/icon-512.png' } }, mainEntityOfPage: SITE + urlOf(p), isAccessibleForFree: p.access !== 'members' };
+  const article = { '@context': 'https://schema.org', '@type': 'Article', headline: p.title, description: p.meta_desc || summaryOf(p), image: abs(p.cover_url), datePublished: p.published_at, dateModified: p.updated_at || p.published_at, author: { '@type': 'Person', name: 'Gilbert Jones', url: SITE + AUTHOR_URL }, publisher: { '@type': 'Organization', name: 'Pet Primer', logo: { '@type': 'ImageObject', url: SITE + '/assets/img/icon-512.png' } }, mainEntityOfPage: SITE + urlOf(p), isAccessibleForFree: p.access !== 'members' };
   const schema = [crumbs, article];
   if (p.kind === 'faq' && p.access !== 'members') schema.push({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: [{ '@type': 'Question', name: p.title, acceptedAnswer: { '@type': 'Answer', text: [p.bottom_line, plainText(p.body)].filter(Boolean).join(' ') } }] });
+  const body = withContents(noteBody(p), p);
   const content = `<article class="article">
 <div class="narrow">
 <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> › <a href="${section[1]}">${section[0]}</a> › ${esc(p.title)}</nav>
 <p class="eyebrow">${esc(PET[p.pet])} · ${esc(KIND[p.kind])}${p.kind === 'myth' && p.verdict ? ` · Verdict: ${esc(p.verdict)}` : ''}</p>
 <h1>${esc(p.title)}</h1>
-<div class="byline"><img src="/assets/img/golden-retriever.jpg" alt="" width="44" height="44"><span style="display: flex; flex-direction: column; line-height: 1.3"><a href="/about/" style="font-weight: 600; color: var(--ink); text-decoration: none">Gilbert Jones</a><span class="small muted">${esc(p.author_note || 'Pet Primer')} · ${p.reviewed_at ? 'Reviewed ' + esc(date(p.reviewed_at)) : 'Updated ' + esc(date(p.updated_at || p.published_at))}</span></span></div>
+<div class="byline"><img src="/assets/img/golden-retriever-112.webp" alt="" width="44" height="44"><span style="display: flex; flex-direction: column; line-height: 1.3"><a href="${AUTHOR_URL}" rel="author" style="font-weight: 600; color: var(--ink); text-decoration: none">Gilbert Jones</a><span class="small muted">${esc(p.author_note || 'Pet Primer')} · ${p.reviewed_at ? 'Reviewed ' + esc(date(p.reviewed_at)) : 'Updated ' + esc(date(p.updated_at || p.published_at))} · ${body.minutes} min read</span></span></div>
 ${p.bottom_line ? `<div class="bottom-line"><strong>Bottom line:</strong> ${esc(p.bottom_line)}</div>` : ''}
 ${p.cover_url ? `<img class="cover" src="${esc(p.cover_url)}" alt="${esc(p.cover_alt || '')}" style="object-position: center 30%">` : ''}
-<div class="prose">${noteBody(p)}</div>
+${body.toc}
+<div class="prose">${body.html}</div>
 ${(p.claims || []).length ? `<section class="claims" aria-labelledby="claims-h"><h2 id="claims-h" style="font-size: 26px">What the evidence says</h2>${p.claims.map(claimCard).join('\n')}</section>` : ''}
-<div class="notice" role="note" style="margin-top: 32px"><span>This note shares experience and research, not a diagnosis. If your pet seems unwell, contact a vet.</span></div>
+${madeBox(p)}
+<div class="notice" role="note" style="margin-top: 24px"><span>This note shares experience and research, not a diagnosis. If your pet seems unwell, contact a vet. Possible poisoning? See the <a href="/emergency/">emergency page</a>.</span></div>
 <div class="panel" style="margin-top: 24px; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between"><span style="font-weight: 600; font-size: 18px">Does your pet do this too?</span><a class="btn" href="/community/">Share in the community</a></div>
 </div>
 ${related.length ? `<div class="wrap" style="margin-top: 56px"><h2 style="font-size: 28px; margin-bottom: 18px">Related notes</h2><div class="grid">${related.map(card).join('\n')}</div></div>` : ''}
@@ -142,10 +188,108 @@ function listingPage({ pathName, nav, title, h1, intro, items, seoTitle, seoDesc
 <p class="eyebrow">${esc(title)}</p>
 <h1 style="font-size: clamp(36px, 5vw, 52px); margin: 8px 0 12px">${esc(h1)}</h1>
 <p style="font-size: 18px; color: var(--ink-2); max-width: 44rem; margin-bottom: 32px">${esc(intro)}</p>
-${items.length ? `<div class="grid">${items.map(card).join('\n')}</div>` : `<div class="empty"><img src="/assets/img/corgi.png" alt="" width="120" height="133" style="width: 120px; height: auto"><p>The first notes here are being researched now. Follow along on <a href="https://www.instagram.com/petprimer.care/">Instagram</a> or ask a question in the <a href="/community/">community</a>.</p></div>`}
+${items.length ? `<div class="grid">${items.map(card).join('\n')}</div>` : `<div class="empty"><img src="/assets/img/paws-empty.svg" alt="" width="132" height="99" class="empty-art"><p>The first notes here are being researched now. Follow along on <a href="https://www.instagram.com/petprimer.care/">Instagram</a> or ask a question in the <a href="/community/">community</a>.</p></div>`}
 </section>`;
   const schema = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: h1, url: SITE + pathName, hasPart: items.map((p) => ({ '@type': 'Article', headline: p.title, url: SITE + urlOf(p) })) };
   return page({ pathName, nav, title: seoTitle, description: seoDesc, schema, content });
+}
+
+// ---------- "Can my pet eat this?" ----------
+const EAT = { no: ['No, keep away', 'eat-no'], caution: ['Only with care', 'eat-caution'], yes: ['Generally safe', 'eat-yes'], unknown: ['Not checked yet', 'eat-unknown'] };
+const CHECKED = 'October 17, 2026';
+const eatPill = (st, who) => `<span class="pill eat ${EAT[st][1]}">${who ? `<span class="sr-only">${who}: </span>` : ''}${EAT[st][0]}</span>`;
+const eatUrl = (it) => `/can-my-pet-eat/${it.slug}/`;
+const lcName = (n) => (/^Boston/.test(n) ? n : n.charAt(0).toLowerCase() + n.slice(1)).replace(/\s*\(.*\)/, '');
+const isPlural = (n) => /s$/.test(n.replace(/\s*\(.*\)/, '')) && !/pothos/i.test(n);
+const eatQuestion = (it, pet) => it.group === 'plant' ? `${isPlural(it.name) ? 'Are' : 'Is'} ${lcName(it.name)} safe for ${pet}?` : `Can ${pet} ${it.verb || 'eat'} ${lcName(it.name)}?`;
+const eatTitle = (it) => eatQuestion(it, it.cat === 'unknown' ? 'dogs' : 'dogs and cats');
+const eatAnswer = (it, pet) => it[pet] === 'unknown' ? `Not checked yet for ${pet === 'dog' ? 'dogs' : 'cats'}. Ask your vet before offering it.` : `${EAT[it[pet]][0]}. ${it[pet + '_note'] || ''}`.trim();
+
+function eatPage(it, posts) {
+  const art = it.article && posts.find((p) => p.slug === it.article);
+  const srcs = (it.sources || []).map((k) => CHECKER.sources[k]).filter(Boolean);
+  const qa = ['dog', 'cat'].filter((k) => it[k] !== 'unknown').map((k) => ({ '@type': 'Question', name: eatQuestion(it, k === 'dog' ? 'dogs' : 'cats'), acceptedAnswer: { '@type': 'Answer', text: eatAnswer(it, k) } }));
+  const schema = [
+    { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Can my pet eat this?', item: SITE + '/can-my-pet-eat/' },
+      { '@type': 'ListItem', position: 3, name: it.name, item: SITE + eatUrl(it) }] },
+    qa.length ? { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: qa } : null].filter(Boolean);
+  const box = (k, label) => `<div class="eat-card ${EAT[it[k]][1]}-card"><span class="eat-who">${label}</span>${eatPill(it[k])}<p>${esc(it[k] === 'unknown' ? 'Our sources for this item only cover dogs. Ask your vet before offering it to a cat.' : it[k + '_note'] || '')}</p></div>`;
+  const danger = it.dog === 'no' || it.cat === 'no';
+  const content = `<article class="article"><div class="narrow">
+<nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a> › <a href="/can-my-pet-eat/">Can my pet eat this?</a> › ${esc(it.name)}</nav>
+<p class="eyebrow">${it.group === 'plant' ? 'Plants' : 'Food'} · Can my pet eat this?</p>
+<h1>${esc(eatTitle(it))}</h1>
+${it.aka ? `<p class="muted" style="margin-top: 10px">Also covers: ${esc(it.aka)}</p>` : ''}
+<div class="eat-cards">${box('dog', 'Dogs')}${box('cat', 'Cats')}</div>
+${it.what_to_do ? `<div class="${danger ? 'notice notice-danger' : 'notice'}" role="note" style="margin-top: 20px"><span><strong>If your pet ate some:</strong> ${esc(it.what_to_do)}${danger ? ' <a href="/emergency/">Poison line numbers</a>' : ''}</span></div>` : ''}
+${art || it.tool ? `<div class="eat-more">${art ? `<a class="btn ghost" href="${urlOf(art)}">Read the full article</a>` : ''}${it.tool ? `<a class="btn ghost" href="${it.tool}">Open the chocolate calculator</a>` : ''}</div>` : ''}
+<section class="made" aria-labelledby="src-h" style="margin-top: 28px"><h2 id="src-h">Sources</h2><ul>${srcs.map(([t, u]) => `<li><a href="${esc(u)}" rel="noopener nofollow">${esc(t)}</a></li>`).join('')}</ul>
+<p class="small muted">Checked by Gilbert Jones on ${CHECKED}. Not reviewed by a vet. Every pet is different, and amounts matter. Corrections: <a href="mailto:petprimer.care@gmail.com?subject=${encodeURIComponent('Correction: ' + it.name)}">petprimer.care@gmail.com</a></p></section>
+<p style="margin-top: 24px"><a href="/can-my-pet-eat/">← Check another food or plant</a></p>
+</div></article>`;
+  return page({ pathName: eatUrl(it), nav: 'tools', title: `${eatTitle(it)} | Pet Primer`, description: `Dogs: ${eatAnswer(it, 'dog')} Cats: ${eatAnswer(it, 'cat')}`.slice(0, 158).replace(/\s\S*$/, '…'), schema, content });
+}
+
+function eatIndex() {
+  const row = (it) => `<li class="eat-row" data-name="${esc((it.name + ' ' + (it.aka || '')).toLowerCase())}" data-group="${it.group}"><a href="${eatUrl(it)}"><span class="eat-name">${esc(it.name)}</span><span class="eat-pair"><span class="eat-pet">Dogs</span>${eatPill(it.dog, 'Dogs')}<span class="eat-pet">Cats</span>${eatPill(it.cat, 'Cats')}</span></a></li>`;
+  const sorted = (g) => CHECKER.items.filter((i) => i.group === g).sort((a, b) => a.name.localeCompare(b.name));
+  const content = `<section class="wrap" style="padding-top: 48px; padding-bottom: 80px; max-width: 900px">
+<p class="eyebrow">Tool</p>
+<h1 style="font-size: clamp(34px, 5vw, 50px); margin: 8px 0 12px">Can my pet eat this?</h1>
+<p style="font-size: 18px; color: var(--ink-2); max-width: 44rem">Type a food or plant to see whether it’s safe for dogs and cats, with the source for every answer.</p>
+<div class="notice notice-danger" role="note" style="margin: 20px 0"><span><strong>Already eaten something worrying?</strong> Don’t wait for signs. <a href="/emergency/">Call a vet or pet poison line now</a>.</span></div>
+<label for="eat-q" class="sr-only">Search foods and plants</label>
+<input id="eat-q" class="field eat-search" type="search" placeholder="Try “grapes”, “gum” or “lily”" autocomplete="off" data-eat-search>
+<p class="small muted" data-eat-count role="status" style="margin: 8px 0 0"></p>
+<div class="eat-legend small"><span>${eatPill('no')} keep away</span><span>${eatPill('caution')} small amounts or with care</span><span>${eatPill('yes')} generally safe</span></div>
+<h2 class="eat-group" data-group-head="food">Foods</h2>
+<ul class="eat-list" data-eat-list>${sorted('food').map(row).join('')}</ul>
+<h2 class="eat-group" data-group-head="plant">Plants and flowers</h2>
+<ul class="eat-list" data-eat-list>${sorted('plant').map(row).join('')}</ul>
+<p class="empty" data-eat-empty hidden>Not on the list yet. <a href="mailto:petprimer.care@gmail.com?subject=Please%20add%20to%20the%20checker">Ask us to add it</a>, and check with your vet in the meantime.</p>
+<p class="small muted" style="margin-top: 24px">Answers summarise the ASPCA, the Merck Veterinary Manual, the US FDA, the American Kennel Club and vet schools. Last checked ${CHECKED}. Not reviewed by a vet.</p>
+</section>
+<script type="module" src="/assets/js/checker.js?v={{version}}"></script>`;
+  const schema = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'Can my pet eat this?', url: SITE + '/can-my-pet-eat/', hasPart: CHECKER.items.map((i) => ({ '@type': 'WebPage', name: eatTitle(i), url: SITE + eatUrl(i) })) };
+  return page({ pathName: '/can-my-pet-eat/', nav: 'tools', title: 'Can My Dog or Cat Eat This? Food and Plant Checker | Pet Primer', description: 'Check whether common foods and plants are safe for dogs and cats, from chocolate and grapes to lilies and sugar-free gum, with a source for every answer.', schema, content });
+}
+
+function authorPage(notes) {
+  const content = `<section class="wrap" style="max-width: 1040px; padding-top: 56px; padding-bottom: 72px">
+<div style="display: flex; flex-wrap: wrap; gap: 32px; align-items: center">
+<img src="/assets/img/golden-retriever.jpg" width="160" height="160" alt="Gilbert Jones’s golden retriever" style="width: 160px; height: 160px; border-radius: 50%; object-fit: cover; object-position: center 30%">
+<div style="flex: 1 1 360px; display: flex; flex-direction: column; gap: 10px">
+<p class="eyebrow">Author</p>
+<h1 style="font-size: clamp(34px, 5vw, 48px)">Gilbert Jones</h1>
+<p style="font-size: 18px; color: var(--ink-2); max-width: 40rem">Dog owner and creator of Pet Primer. I write every article and grade every claim. I’m not a veterinarian, so I lean on published research, veterinary reference works and poison-control data, and link to all of it.</p>
+</div></div>
+<div class="grid" style="margin-top: 36px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr))">
+<div class="panel"><h2 style="font-size: 20px; font-family: var(--body)">What I write about</h2><p class="muted">Everyday dog and cat care: food safety, behaviour, myths and seasonal risks.</p></div>
+<div class="panel"><h2 style="font-size: 20px; font-family: var(--body)">How I check things</h2><p class="muted">Each claim is graded from Strong to Not supported. <a href="/how-we-grade/">See the method</a>.</p></div>
+<div class="panel"><h2 style="font-size: 20px; font-family: var(--body)">Corrections</h2><p class="muted">Found a mistake? Email <a href="mailto:petprimer.care@gmail.com">petprimer.care@gmail.com</a> and I’ll review it.</p></div>
+</div>
+<h2 style="font-size: 28px; margin: 48px 0 18px">Articles by Gilbert (${notes.length})</h2>
+<div class="grid">${notes.map(card).join('\n')}</div>
+<p style="margin-top: 28px"><a href="/about/">More about Pet Primer</a> · <a href="https://x.com/PetPrimer1" rel="noopener me">X</a> · <a href="https://www.instagram.com/petprimer.care/" rel="noopener me">Instagram</a></p>
+</section>`;
+  const schema = { '@context': 'https://schema.org', '@type': 'ProfilePage', url: SITE + AUTHOR_URL, mainEntity: { '@type': 'Person', name: 'Gilbert Jones', url: SITE + AUTHOR_URL, image: SITE + '/assets/img/golden-retriever.jpg', description: 'Dog owner and creator of Pet Primer. Not a veterinarian.', worksFor: { '@type': 'Organization', name: 'Pet Primer', url: SITE + '/' }, sameAs: ['https://x.com/PetPrimer1', 'https://www.instagram.com/petprimer.care/'] } };
+  return page({ pathName: AUTHOR_URL, nav: 'about', title: 'Gilbert Jones, author | Pet Primer', description: 'Gilbert Jones writes and fact-checks every Pet Primer article. A dog owner, not a vet, who grades each claim by the evidence and links every source.', schema, content });
+}
+
+// Myth or Fact quiz: myth checks are myths, strongly supported claims are facts.
+function quizData(notes) {
+  const q = [];
+  for (const p of notes) {
+    if (p.kind === 'myth' && /not supported|not true|false/i.test(p.verdict || 'Not supported')) q.push({ s: p.title, a: 'myth', why: p.bottom_line || '', url: urlOf(p) });
+    for (const c of p.claims || []) {
+      if (p.kind === 'myth') continue;
+      if (c.grade === 'Strong') q.push({ s: c.text, a: 'fact', why: c.note || '', url: urlOf(p) });
+      if (c.grade === 'Not supported') q.push({ s: c.text, a: 'myth', why: c.note || '', url: urlOf(p) });
+    }
+  }
+  return JSON.stringify(q).replace(/</g, '\\u003c');
 }
 
 // ---------- Build ----------
@@ -189,7 +333,7 @@ async function build() {
     : '<div class="claim-card"><p class="muted">Graded claims appear here as notes are published.</p></div>';
   const faqList = faqs.length
     ? faqs.slice(0, 6).map((p, i) => `<details class="faq"${i === 0 ? ' open' : ''}><summary>${esc(p.title)}</summary><div class="answer">
-<div style="display: flex; align-items: center; gap: 12px"><img src="/assets/img/golden-retriever.jpg" alt="" width="44" height="44" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; object-position: center 30%"><span style="display: flex; flex-direction: column; line-height: 1.3"><span style="font-weight: 600">Gilbert Jones</span><span class="small muted">${esc(p.author_note || 'Pet Primer')}</span></span></div>
+<div style="display: flex; align-items: center; gap: 12px"><img src="/assets/img/golden-retriever-112.webp" alt="" width="44" height="44" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; object-position: center 30%"><span style="display: flex; flex-direction: column; line-height: 1.3"><span style="font-weight: 600">Gilbert Jones</span><span class="small muted">${esc(p.author_note || 'Pet Primer')}</span></span></div>
 ${p.bottom_line ? `<p><strong>${esc(p.bottom_line)}</strong></p>` : ''}
 ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), linkOpts)}
 <a href="${urlOf(p)}" style="font-weight: 600">Read the full answer and the evidence →</a>
@@ -212,12 +356,16 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
     let content = src.slice(m[0].length);
     content = content.replaceAll('{{DOG_COUNT}}', count(dogs, 'Dog')).replaceAll('{{CAT_COUNT}}', count(cats, 'Cat'))
       .replaceAll('{{LATEST}}', notes.slice(0, 6).map(card).join('\n') || '<p class="muted">The first notes are being written now.</p>')
+      .replaceAll('{{QUIZ_DATA}}', quizData(notes)).replaceAll('{{EAT_COUNT}}', String(CHECKER.items.length))
       .replaceAll('{{FAQ_LIST}}', faqList).replaceAll('{{MYTHS}}', mythSection).replaceAll('{{EXAMPLE_CLAIM}}', exampleClaim);
     const schema = meta.schema === 'home' ? homeSchema : meta.schema === 'about' ? { '@context': 'https://schema.org', '@type': 'AboutPage', name: 'About Pet Primer', url: SITE + '/about/', mainEntity: { '@type': 'Person', name: 'Gilbert Jones', description: 'Dog owner and creator of Pet Primer' } } : null;
     write(meta.path === '/404.html' ? '404.html' : meta.path, page({ pathName: meta.path, nav: meta.nav, title: meta.title, description: meta.description, robots: meta.noindex ? 'noindex, follow' : 'index, follow', schema, content, bare: meta.bare }));
   }
 
   for (const p of posts) write(urlOf(p), notePage(p, notes));
+  write('/can-my-pet-eat/', eatIndex());
+  for (const it of CHECKER.items) write(eatUrl(it), eatPage(it, posts));
+  write(AUTHOR_URL, authorPage(notes));
   write('/dogs/', listingPage({ pathName: '/dogs/', nav: 'dogs', title: 'Dogs', h1: 'Dog care notes', intro: 'Behavior, diet, health and everyday care for dogs: real experience first, with every claim graded by the evidence.', items: dogs, seoTitle: 'Dog Care Notes Graded by the Evidence | Pet Primer', seoDesc: 'Practical dog care notes on behavior, diet and health, written from real experience with every claim graded by how strong the research is.' }));
   write('/cats/', listingPage({ pathName: '/cats/', nav: 'cats', title: 'Cats', h1: 'Cat care notes', intro: 'Behavior, diet, health and indoor life for cats, researched and graded the same way.', items: cats, seoTitle: 'Cat Care Notes Graded by the Evidence | Pet Primer', seoDesc: 'Practical cat care notes on behavior, diet, health and indoor life, with every claim graded by how strong the research is.' }));
   write('/faq/', listingPage({ pathName: '/faq/', nav: 'faq', title: 'FAQ', h1: 'Frequently asked questions', intro: 'The questions dog and cat owners ask most, answered from real experience and checked against the research.', items: faqs, seoTitle: 'Dog and Cat Questions Answered | Pet Primer FAQ', seoDesc: 'Answers to the questions dog and cat owners ask most, from real experience, with the evidence behind each claim graded in plain words.' }));
@@ -229,15 +377,22 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
     { kind: 'Page', title: 'Dog care notes', url: '/dogs/', tags: 'dog dogs puppy', summary: 'All dog notes.', text: '' },
     { kind: 'Page', title: 'Cat care notes', url: '/cats/', tags: 'cat cats kitten', summary: 'All cat notes.', text: '' },
     { kind: 'Page', title: 'Frequently asked questions', url: '/faq/', tags: 'faq questions answers', summary: 'Common dog and cat questions.', text: '' },
-    { kind: 'Community', title: 'Community board', url: '/community/', tags: 'community ask question photo help forum okay share', summary: 'Ask “Is this okay?” and share photos.', text: '' },
+    { kind: 'Community', title: 'Community board', url: '/community/', tags: 'community ask question photo help forum okay share', summary: 'Get a second opinion from other owners and share photos.', text: '' },
     { kind: 'Page', title: 'Who’s behind Pet Primer', url: '/about/', tags: 'about gilbert jones who vet veterinarian', summary: 'Gilbert Jones and why Pet Primer exists.', text: '' },
+    ...CHECKER.items.map((it) => ({ kind: 'Can my pet eat this?', title: eatTitle(it), url: eatUrl(it), tags: `${it.name} ${it.aka || ''} eat safe toxic poison ${it.group}`, summary: `Dogs: ${EAT[it.dog][0]}. Cats: ${EAT[it.cat][0]}.`, text: `${it.dog_note || ''} ${it.cat_note || ''}` })),
+    { kind: 'Tool', title: 'Can my pet eat this?', url: '/can-my-pet-eat/', tags: 'eat safe toxic food plant poison checker', summary: 'Check foods and plants for dogs and cats.', text: '' },
+    { kind: 'Tool', title: 'Chocolate risk calculator', url: '/tools/chocolate-calculator/', tags: 'chocolate calculator theobromine dose dog ate chocolate', summary: 'How serious is the chocolate your dog ate?', text: '' },
+    { kind: 'Tool', title: 'Dog age calculator', url: '/tools/dog-age/', tags: 'dog age human years calculator', summary: 'Your dog’s age in human years, from a 2020 study.', text: '' },
+    { kind: 'Tool', title: 'Myth or Fact quiz', url: '/tools/myth-quiz/', tags: 'quiz myth fact test', summary: 'Ten quick pet care myths and facts.', text: '' },
+    { kind: 'Page', title: 'Pet poisoning emergency', url: '/emergency/', tags: 'emergency poison poisoned ate help vet hotline helpline number urgent', summary: 'What to do now, and US and UK poison line numbers.', text: '' },
     { kind: 'Page', title: 'Membership', url: '/#membership', tags: 'membership price cost join plan subscribe', summary: '$9–15 a month or $79–129 a year.', text: '' }
   ];
   fs.writeFileSync(path.join(OUT, 'search-index.json'), JSON.stringify(index));
 
   // Sitemap + robots
   const today = new Date().toISOString().slice(0, 10);
-  const urls = [['/', today], ['/dogs/', today], ['/cats/', today], ['/faq/', today], ['/community/', today], ['/about/', today], ['/myths/', today], ['/how-we-grade/', today], ['/privacy/', today], ['/terms/', today],
+  const urls = [['/', today], ['/dogs/', today], ['/cats/', today], ['/faq/', today], ['/community/', today], ['/about/', today], ['/myths/', today], ['/how-we-grade/', today], ['/privacy/', today], ['/terms/', today], ['/emergency/', today], ['/tools/', today], ['/tools/chocolate-calculator/', today], ['/tools/dog-age/', today], ['/tools/myth-quiz/', today], ['/can-my-pet-eat/', today], [AUTHOR_URL, today],
+    ...CHECKER.items.map((it) => [eatUrl(it), '2026-10-17']),
     ...posts.map((p) => [urlOf(p), String(p.updated_at || p.published_at || today).slice(0, 10)])];
   fs.writeFileSync(path.join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, d]) => `<url><loc>${SITE}${u}</loc><lastmod>${d}</lastmod></url>`).join('\n')}\n</urlset>\n`);
   fs.writeFileSync(path.join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /editor/\nDisallow: /search/\n\nSitemap: ${SITE}/sitemap.xml\n`);

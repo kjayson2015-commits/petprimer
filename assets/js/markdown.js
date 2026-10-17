@@ -59,7 +59,7 @@ export function slugify(t) {
     .replace(/[^a-z0-9\s-]/g, '').trim().replace(/[\s-]+/g, '-').slice(0, 70).replace(/-$/, '');
 }
 
-export const RESERVED_SLUGS = ['dogs', 'cats', 'faq', 'community', 'about', 'privacy', 'terms', 'search', 'editor', 'assets', 'myths', 'notes', '404', 'how-we-grade'];
+export const RESERVED_SLUGS = ['dogs', 'cats', 'faq', 'community', 'about', 'privacy', 'terms', 'search', 'editor', 'assets', 'myths', 'notes', '404', 'how-we-grade', 'emergency', 'tools', 'can-my-pet-eat', 'authors'];
 
 export const GRADES = ['Pending', 'Strong', 'Moderate', 'Early', 'Weak', 'Not supported'];
 export const gradeClass = (g) => 'grade-' + String(g || 'Pending').toLowerCase().replace(/\s+/g, '-');

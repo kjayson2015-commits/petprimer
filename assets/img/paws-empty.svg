@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" width="160" height="120" role="img" aria-label="">
+<defs><g id="p"><ellipse cx="0" cy="5" rx="7" ry="6.2"/><ellipse cx="-9" cy="-3" rx="2.9" ry="3.8" transform="rotate(-18 -9 -3)"/><ellipse cx="-3.6" cy="-9" rx="2.9" ry="3.9" transform="rotate(-6 -3.6 -9)"/><ellipse cx="3.6" cy="-9" rx="2.9" ry="3.9" transform="rotate(6 3.6 -9)"/><ellipse cx="9" cy="-3" rx="2.9" ry="3.8" transform="rotate(18 9 -3)"/></g></defs>
+<g fill="#5E9C78">
+<use href="#p" transform="translate(26 98) rotate(28) scale(.9)" opacity=".35"/>
+<use href="#p" transform="translate(52 80) rotate(38) scale(.95)" opacity=".5"/>
+<use href="#p" transform="translate(70 100) rotate(32)" opacity=".6"/>
+<use href="#p" transform="translate(96 66) rotate(42)" opacity=".75"/>
+<use href="#p" transform="translate(112 88) rotate(36) scale(1.05)" opacity=".88"/>
+<use href="#p" transform="translate(136 50) rotate(44) scale(1.1)"/>
+</g>
+<circle cx="138" cy="20" r="3" fill="#D9A441"/><circle cx="150" cy="30" r="2" fill="#D9A441" opacity=".7"/>
+</svg>

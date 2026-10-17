@@ -1,7 +1,7 @@
 // Pet Primer — shared pieces for the X-style community: post rows, @mentions, #tags, likes, follows.
 import { getClient, el, avatar, badge, timeAgo, toast, currentProfile, requireSignIn } from '/assets/js/app.js';
 
-export const TYPES = { talk: 'Talk', okay: 'Is this okay?', show: 'Show & tell', question: 'Question', tip: 'Tip' };
+export const TYPES = { talk: 'Talk', okay: 'Second opinion', show: 'Show & tell', question: 'Question', tip: 'Tip' };
 export const PETS = { dogs: 'Dogs', cats: 'Cats', both: 'Dogs & cats' };
 export const nameOf = (a) => (a && a.display_name) || 'Member';
 export const handleOf = (a) => (a && a.handle) || '';
@@ -59,7 +59,7 @@ export async function report(targetType, targetId) {
   if (!reason) return;
   const sb = await getClient();
   const { error } = await sb.from('reports').insert({ reporter_id: me.id, target_type: targetType, target_id: targetId, reason: reason.slice(0, 500) });
-  toast(error ? 'Could not send the report.' : 'Thanks. The report was sent to Pet Primer.');
+  toast(!error ? 'Thanks. The report was sent to Pet Primer.' : error.code === '23505' ? 'You’ve already reported this. Thanks.' : 'Could not send the report.');
 }
 
 // Like (heart) a post; keeps the count in step without reloading.
