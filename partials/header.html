@@ -45,3 +45,32 @@
 </div>
 </div>
 </header>
+<a class="tab-emergency" href="/emergency/"><span class="nav-emergency-dot" aria-hidden="true"></span>Emergency</a>
+<nav class="tabbar" aria-label="Main sections" data-tabbar>
+<a href="/" data-tab-for="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
+<a href="/dogs/" data-tab-for="/dogs/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 9.5c-1.4 0-2-1.6-1.6-3.3C3.3 4.3 5 3 6.3 3.4c1.2.4 1.4 2.2.9 3.8-.5 1.4-1.6 2.3-2.7 2.3zm15 0c1.4 0 2-1.6 1.6-3.3C20.7 4.3 19 3 17.7 3.4c-1.2.4-1.4 2.2-.9 3.8.5 1.4 1.6 2.3 2.7 2.3zM9.2 7.2c1.3 0 2-1.5 1.8-3.1C10.8 2.6 9.8 1.6 8.7 1.9c-1.2.3-1.6 1.8-1.4 3.1.2 1.3 1 2.2 1.9 2.2zm5.6 0c-1.3 0-2-1.5-1.8-3.1.2-1.5 1.2-2.5 2.3-2.2 1.2.3 1.6 1.8 1.4 3.1-.2 1.3-1 2.2-1.9 2.2zM12 10c-3 0-6.5 4.6-6.5 7.6C5.5 20 7.3 21 9 21c1.2 0 2-.6 3-.6s1.8.6 3 .6c1.7 0 3.5-1 3.5-3.4C18.5 14.6 15 10 12 10z"/></svg><span>Dogs</span></a>
+<a href="/cats/" data-tab-for="/cats/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3l4.2 4.2A9.6 9.6 0 0 1 12 6.5c1.4 0 2.7.3 3.8.7L20 3v8.2c.6 1.1 1 2.4 1 3.8 0 4-4 6.5-9 6.5S3 19 3 15c0-1.4.4-2.7 1-3.8zm4.5 9.5a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4zm7 0a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4zM12 16.2l-1.2 1h2.4z"/></svg><span>Cats</span></a>
+<a href="/adopt/" data-tab-for="/adopt/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.3-9.4C1.4 8 3.6 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.4 0 5.6 3.5 4.3 7.1C19.5 16.4 12 21 12 21z"/></svg><span>Adopt</span></a>
+<button type="button" data-more-open aria-expanded="false" aria-controls="more-sheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M4 12h16M4 17.5h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span>More</span></button>
+</nav>
+<div class="more-sheet" id="more-sheet" hidden data-more-sheet>
+<button type="button" class="more-shade" aria-label="Close menu" data-more-close></button>
+<div class="more-panel" role="dialog" aria-modal="true" aria-labelledby="more-title">
+<div class="more-grab" aria-hidden="true"></div>
+<div class="more-head"><h2 id="more-title">More</h2><button type="button" class="more-x" aria-label="Close" data-more-close>✕</button></div>
+<a class="more-find" href="/adopt/"><span class="more-find-ic" aria-hidden="true">🏡</span><span><strong>Help me find a pet</strong><span>Dogs and cats who need a home</span></span></a>
+<p class="more-sec">Learn</p>
+<div class="more-chips"><a href="/dogs/">Dogs</a><a href="/cats/">Cats</a><a href="/myths/">Myth checks</a><a href="/faq/">FAQ</a><a href="/how-we-grade/">How we grade</a></div>
+<p class="more-sec">Tools</p>
+<div class="more-chips"><a href="/can-my-pet-eat/">Can my pet eat this?</a><a href="/tools/chocolate-calculator/">Chocolate calculator</a><a href="/tools/dog-age/">Dog age</a><a href="/tools/myth-quiz/">Myth quiz</a><a href="/tools/">All tools</a></div>
+<p class="more-sec">Community</p>
+<div class="more-chips"><a href="/community/">Community board</a><a href="/adopt/list/">Rehome a pet</a><button type="button" data-open-community>Follow us</button></div>
+<p class="more-sec">About</p>
+<div class="more-chips"><a href="/about/">About Pet Primer</a><a href="/authors/gilbert-jones/">Author</a><a href="mailto:petprimer.care@gmail.com">Contact</a></div>
+<a class="more-emergency" href="/emergency/"><span class="nav-emergency-dot" aria-hidden="true"></span>Emergency: pet poison help</a>
+<div class="more-foot">
+<button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode" title="Switch to dark mode"><svg class="i-moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z" fill="currentColor"/></svg><svg class="i-sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></g></svg><span class="theme-label">Dark mode</span></button>
+<span data-auth-slot><button type="button" class="btn ghost" data-sign-in>Sign in</button></span>
+</div>
+</div>
+</div>

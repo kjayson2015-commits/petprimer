@@ -131,6 +131,24 @@ export async function shrinkImage(file, max = 1600) {
   document.addEventListener('click', (e) => { if (!phone.matches) mores.forEach((m) => { if (m.open && !m.contains(e.target)) m.open = false; }); });
 })();
 
+// ---------- Phone tab bar and "More" panel ----------
+(function tabBar() {
+  const bar = document.querySelector('[data-tabbar]');
+  const sheet = document.querySelector('[data-more-sheet]');
+  if (!bar || !sheet) return;
+  const path = location.pathname;
+  const hit = [...bar.querySelectorAll('[data-tab-for]')].filter((a) => (a.dataset.tabFor === '/' ? path === '/' : path.startsWith(a.dataset.tabFor))).pop();
+  if (hit) hit.setAttribute('aria-current', 'page');
+  sheet.querySelectorAll('.more-chips a').forEach((a) => { if (a.getAttribute('href') === path) a.setAttribute('aria-current', 'page'); });
+  const btn = bar.querySelector('[data-more-open]');
+  let last = null;
+  const open = () => { last = document.activeElement; sheet.hidden = false; document.documentElement.classList.add('more-open'); btn.setAttribute('aria-expanded', 'true'); requestAnimationFrame(() => sheet.classList.add('is-open')); const f = sheet.querySelector('.more-x'); if (f) f.focus(); };
+  const close = () => { sheet.classList.remove('is-open'); document.documentElement.classList.remove('more-open'); btn.setAttribute('aria-expanded', 'false'); setTimeout(() => { sheet.hidden = true; }, 200); if (last && last.focus) last.focus(); };
+  btn.addEventListener('click', () => (sheet.hidden ? open() : close()));
+  sheet.addEventListener('click', (e) => { if (e.target.closest('[data-more-close]')) close(); else if (e.target.closest('a, [data-sign-in], [data-open-community]')) setTimeout(close, 0); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheet.hidden) close(); });
+})();
+
 // ---------- Modals ----------
 function openModal(id) {
   const m = document.getElementById(id);
@@ -214,14 +232,14 @@ if (form) {
 }
 
 async function paintAuth() {
-  const slot = document.querySelector('[data-auth-slot]');
-  if (!slot) return;
+  const slots = [...document.querySelectorAll('[data-auth-slot]')];
+  if (!slots.length) return;
   const sb = await getClient();
   if (!sb) return;
   const p = await currentProfile();
   if (!p) return;
   document.documentElement.classList.add('signed-in');
-  slot.replaceChildren(
+  for (const slot of slots) slot.replaceChildren(
     el('span', { style: 'display:inline-flex;align-items:center;gap:8px' },
       avatar(p, 34),
       el('span', { class: 'small auth-name', style: 'font-weight:600', text: p.display_name || 'You' }),
