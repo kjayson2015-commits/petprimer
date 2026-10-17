@@ -404,3 +404,29 @@ html.is-dark .theme-toggle .i-moon { display: none; }
   .main-nav { gap: 4px 20px; }
   .site-menu { gap: 12px 20px; }
 }
+
+/* Reply box: never wider than its card */
+.reply-form { flex: 1; min-width: 0; align-items: center; }
+.reply-form input { flex: 1 1 150px; min-width: 0; background: var(--surface); color: var(--ink); }
+.reply-form .btn { min-height: 44px; padding: 0 18px; }
+
+/* Bigger tap targets for reply, like, share and report on touch screens and phones */
+@media (pointer: coarse), (max-width: 560px) {
+  .act { min-height: 44px; min-width: 44px; padding: 0 10px; font-size: 15px; gap: 6px; }
+  .act svg { width: 21px; height: 21px; }
+  .tweet-actions { max-width: none; margin-left: -10px; margin-right: -10px; }
+  .tweet { padding: 14px 16px 4px; }
+  .compose-tool { width: 44px; height: 44px; }
+  .compose-bar select { min-height: 40px; }
+  .x-tabs button { min-height: 50px; }
+}
+@media (max-width: 560px) {
+  .tweet-head { font-size: 15px; }
+  .tweet-handle { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .thread .reply { padding-left: 14px; padding-right: 14px; }
+}
+.reply-form { flex-wrap: nowrap; }
+.reply-form input { flex: 1 1 0; }
+.reply-form .btn { padding: 0 16px; flex: none; }
+.reply-form:has(.btn.plain) { flex-wrap: wrap; }
+.reply-form:has(.btn.plain) input { flex: 1 1 100%; }
