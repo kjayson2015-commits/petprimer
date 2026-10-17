@@ -80,6 +80,27 @@ export async function shrinkImage(file, max = 1600) {
   return new Promise((res) => c.toBlob((b) => res(b), 'image/jpeg', 0.85));
 }
 
+// ---------- Header menu ----------
+(function headerMenu() {
+  const header = document.querySelector('.site-header');
+  const toggle = document.querySelector('[data-menu-toggle]');
+  const more = document.querySelector('.nav-more');
+  if (!header || !toggle) return;
+  const phone = window.matchMedia('(max-width: 1120px)');
+  const setOpen = (open) => { header.classList.toggle('menu-open', open); toggle.setAttribute('aria-expanded', String(open)); };
+  toggle.addEventListener('click', () => setOpen(!header.classList.contains('menu-open')));
+  // On phones the About links are always listed in the open menu.
+  const syncMore = () => { if (more) more.open = phone.matches; };
+  syncMore();
+  phone.addEventListener('change', () => { syncMore(); if (!phone.matches) setOpen(false); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (header.classList.contains('menu-open')) { setOpen(false); toggle.focus(); }
+    if (more && more.open && !phone.matches) { more.open = false; more.querySelector('summary').focus(); }
+  });
+  document.addEventListener('click', (e) => { if (more && more.open && !phone.matches && !more.contains(e.target)) more.open = false; });
+})();
+
 // ---------- Modals ----------
 function openModal(id) {
   const m = document.getElementById(id);

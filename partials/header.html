@@ -5,17 +5,29 @@
 <img src="/assets/img/golden-retriever.jpg" alt="" width="44" height="44">
 <span>Pet Primer</span>
 </a>
+<button type="button" class="menu-toggle" aria-expanded="false" aria-controls="site-menu" data-menu-toggle><span class="bars" aria-hidden="true"></span><span class="menu-label">Menu</span></button>
+<div class="site-menu" id="site-menu">
 <nav class="main-nav" aria-label="Main">
+<span class="nav-group-label">Learn</span>
 <a data-nav="dogs" href="/dogs/">Dogs</a>
 <a data-nav="cats" href="/cats/">Cats</a>
+<a data-nav="myths" href="/myths/">Myth checks</a>
 <a data-nav="faq" href="/faq/">FAQ</a>
+<span class="nav-sep" aria-hidden="true"></span>
 <a data-nav="community" href="/community/">Community</a>
+<details class="nav-more">
+<summary>About</summary>
+<div class="nav-pop">
+<a data-nav="about" href="/about/">About Pet Primer</a>
 <a data-nav="grades" href="/how-we-grade/">How we grade</a>
-<a data-nav="about" href="/about/">About</a>
+<a href="mailto:petprimer.care@gmail.com">Contact</a>
+</div>
+</details>
 </nav>
 <div class="header-actions">
 <button type="button" class="btn ghost" data-open-community>Join community</button>
 <span data-auth-slot><button type="button" class="btn plain" data-sign-in>Sign in</button></span>
+</div>
 </div>
 </div>
 </header>
