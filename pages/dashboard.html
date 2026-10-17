@@ -1,0 +1,21 @@
+<!--meta {"path": "/dashboard/", "nav": "dashboard", "title": "Visitor dashboard | Pet Primer", "description": "Private visitor dashboard for the Pet Primer editor.", "schema": "page", "noindex": true}-->
+<section class="wrap vd" data-vd>
+<div class="vd-head">
+<div>
+<p class="eyebrow">Private · editor only</p>
+<h1>Visitors</h1>
+</div>
+<div class="vd-controls" data-vd-controls hidden>
+<span class="vd-live-pill" data-vd-status><span class="vd-pulse" aria-hidden="true"></span>Live</span>
+<div class="vd-range" role="group" aria-label="Time range">
+<button type="button" data-range="1" aria-pressed="false">Today</button>
+<button type="button" data-range="7" aria-pressed="false">7 days</button>
+<button type="button" data-range="30" aria-pressed="true">30 days</button>
+<button type="button" data-range="90" aria-pressed="false">90 days</button>
+</div>
+<button type="button" class="btn ghost vd-refresh" data-vd-refresh>Refresh</button>
+</div>
+</div>
+<div data-vd-body><div class="panel"><p class="muted">Loading your visitor numbers…</p></div></div>
+</section>
+<script type="module" src="/assets/js/dashboard.js?v={{version}}"></script>

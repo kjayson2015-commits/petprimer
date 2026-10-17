@@ -265,22 +265,42 @@ async function paintAuth() {
       avatar(p, 34),
       el('span', { class: 'small auth-name', style: 'font-weight:600', text: p.display_name || 'You' }),
       p.is_admin ? el('a', { class: 'btn ghost', href: '/editor/', text: 'Editor' }) : null,
+      p.is_admin ? el('a', { class: 'btn ghost', href: '/dashboard/', text: 'Visitors' }) : null,
       el('button', { type: 'button', class: 'btn plain', text: 'Sign out', onclick: async () => { await sb.auth.signOut(); location.reload(); } }))
   );
 }
 paintAuth();
 
 // ---------- Private visit counter ----------
-// Records only the page and the referring website. No cookies, no IP, nothing personal.
-// Skipped for the editor, for local testing, and when the browser sends Do Not Track.
+// Records the page, the referring website, phone/tablet/computer, the browser's time zone
+// (e.g. America/Chicago) and a random visit code the browser forgets when the tab closes.
+// No cookies, no IP, no account link. Skipped for the editor, local testing, Do Not Track,
+// and for browsers where the editor turned counting off on the visitor dashboard.
 (function countVisit() {
   try {
     if (navigator.doNotTrack === '1' || window.doNotTrack === '1') return;
-    if (location.pathname.startsWith('/editor') || !/petprimer\.online$/.test(location.hostname)) return;
-    if (/bot|crawl|spider|preview|headless/i.test(navigator.userAgent)) return;
+    if (/^\/(editor|dashboard)/.test(location.pathname) || !/petprimer\.online$/.test(location.hostname)) return;
+    if (/bot|crawl|spider|preview|headless|lighthouse/i.test(navigator.userAgent)) return;
+    try { if (localStorage.getItem('pp-no-count') === '1') return; } catch (e) { /* storage blocked */ }
     let ref = '';
     try { const r = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, '') : ''; ref = r && !/petprimer\.online$/.test(r) ? r : ''; } catch (e) { ref = ''; }
-    const send = () => getClient().then((sb) => sb && sb.from('page_views').insert({ path: location.pathname.slice(0, 200), referrer: ref.slice(0, 200) })).catch(() => {});
+    let session = '';
+    try {
+      session = sessionStorage.getItem('pp-visit') || '';
+      if (!session) { session = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now().toString(36)).replace(/-/g, '').slice(0, 16); sessionStorage.setItem('pp-visit', session); }
+    } catch (e) { session = ''; }
+    const coarse = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+    const w = Math.min(screen.width || innerWidth, screen.height || innerHeight) || innerWidth;
+    const device = coarse ? (w < 600 ? 'phone' : 'tablet') : 'computer';
+    let tz = '';
+    try { tz = (Intl.DateTimeFormat().resolvedOptions().timeZone || '').slice(0, 60); } catch (e) { tz = ''; }
+    const base = { path: location.pathname.slice(0, 200), referrer: ref.slice(0, 200) };
+    const send = () => getClient().then(async (sb) => {
+      if (!sb) return;
+      const { error } = await sb.from('page_views').insert({ ...base, session, device, tz });
+      // Before the dashboard update is installed in Supabase, fall back to the basic count.
+      if (error && /column|schema cache|PGRST204/i.test(`${error.code || ''} ${error.message || ''}`)) await sb.from('page_views').insert(base);
+    }).catch(() => {});
     if (document.readyState === 'complete') setTimeout(send, 800); else window.addEventListener('load', () => setTimeout(send, 800), { once: true });
   } catch (e) { /* counting is best-effort */ }
 })();

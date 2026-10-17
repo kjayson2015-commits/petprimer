@@ -350,7 +350,8 @@ async function loadVisitors() {
 
 function visitorsView() {
   const wrap = el('div', { style: 'padding:28px;display:flex;flex-direction:column;gap:22px;max-width:860px' },
-    el('h2', { style: 'font-size:26px', text: 'Visitors' }));
+    el('h2', { style: 'font-size:26px', text: 'Visitors' }),
+    el('a', { class: 'btn', href: '/dashboard/', style: 'align-self:flex-start', text: 'Open the live visitor dashboard →' }));
   if (!S.views) {
     wrap.append(el('p', { class: 'muted', text: S.viewsError ? 'The visitor counter is not set up yet (' + S.viewsError + '). Run supabase/003_starter_content.sql in the Supabase SQL editor.' : 'Loading…' }));
     return wrap;

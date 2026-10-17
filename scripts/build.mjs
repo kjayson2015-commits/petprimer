@@ -538,7 +538,7 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
     ...posts.map((p) => [urlOf(p), String(p.updated_at || p.published_at || today).slice(0, 10)]),
     ...listings.filter((l) => l.status === 'available').map((l) => [petUrl(l), String(l.updated_at || l.created_at).slice(0, 10)])];
   fs.writeFileSync(path.join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, d]) => `<url><loc>${SITE}${u}</loc><lastmod>${d}</lastmod></url>`).join('\n')}\n</urlset>\n`);
-  fs.writeFileSync(path.join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /editor/\nDisallow: /search/\n\nSitemap: ${SITE}/sitemap.xml\n`);
+  fs.writeFileSync(path.join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /editor/\nDisallow: /dashboard/\nDisallow: /search/\n\nSitemap: ${SITE}/sitemap.xml\n`);
   console.log(`Built ${posts.length} notes and ${fs.readdirSync(path.join(ROOT, 'pages')).length} pages into _site/ (version ${VERSION}).`);
 }
 
