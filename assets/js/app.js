@@ -220,7 +220,7 @@ async function paintAuth() {
   slot.replaceChildren(
     el('span', { style: 'display:inline-flex;align-items:center;gap:8px' },
       avatar(p, 34),
-      el('span', { class: 'small', style: 'font-weight:600', text: p.display_name || 'You' }),
+      el('span', { class: 'small auth-name', style: 'font-weight:600', text: p.display_name || 'You' }),
       p.is_admin ? el('a', { class: 'btn ghost', href: '/editor/', text: 'Editor' }) : null,
       el('button', { type: 'button', class: 'btn plain', text: 'Sign out', onclick: async () => { await sb.auth.signOut(); location.reload(); } }))
   );
