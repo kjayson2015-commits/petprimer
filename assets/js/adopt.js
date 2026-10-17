@@ -96,7 +96,6 @@ async function browse() {
         el('p', { style: 'white-space: pre-line', text: p.about }),
         p.good_with ? el('p', { class: 'small' }, el('strong', { text: 'Good with: ' }), p.good_with) : null,
         p.status === 'adopted' ? el('p', { class: 'small muted', text: 'This pet has found a home.' }) : await contactBlock(p),
-        el('p', { class: 'small adopt-warn', text: 'Never send money for a deposit, “holding” or shipping before you’ve met the pet in person.' }),
         el('div', { style: 'display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between' },
           el('button', { type: 'button', class: 'btn plain', style: 'padding: 0', text: 'Report this listing', onclick: () => report(p) }),
           el('button', { type: 'button', class: 'btn ghost', 'data-close-modal': '', text: 'Close' }))));

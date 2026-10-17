@@ -401,7 +401,6 @@ ${aImg(l, 'pet-page-img', true)}
 ${l.good_with ? `<p><strong>Good with:</strong> ${esc(l.good_with)}</p>` : ''}
 ${adopted ? `<div class="adopt-contact"><strong>${esc(l.name)} has found a home.</strong><a href="${section[1]}">See other ${section[0].toLowerCase()} looking for a home</a></div>`
     : `<div class="adopt-contact" data-pet-contact data-id="${esc(l.id)}" data-lister="${esc(l.lister)}"><p class="small" style="color: var(--ink-2)">Sign in to see how to contact the person listing ${esc(l.name)}. It’s free and keeps their details away from spam.</p><button type="button" class="btn" data-sign-in>Sign in to contact</button></div>`}
-<p class="small adopt-warn">Never send money for a deposit, “holding” or shipping before you’ve met the pet in person.</p>
 <button type="button" class="btn plain" style="padding: 0; align-self: flex-start" data-pet-report="${esc(l.id)}">Report this listing</button>
 </div>
 </div>
