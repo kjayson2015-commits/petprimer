@@ -33,7 +33,32 @@ const contactLink = (c) => {
   return el('span', { text: t });
 };
 
-// ================= Browse page =================
+// ================= Shared: contact details and reports =================
+const S = { sb: null, me: null };
+
+async function report(p) {
+  if (!S.me) return requireSignIn();
+  const reason = prompt('What’s wrong with this listing? For example: asking for money, a deposit or shipping, or the pet seems not to exist.');
+  if (!reason || !reason.trim()) return;
+  const { error } = await S.sb.from('reports').insert({ reporter_id: S.me.id, target_type: 'listing', target_id: p.id, reason: reason.trim().slice(0, 500) });
+  toast(error ? (/duplicate/i.test(error.message) ? 'You already reported this listing.' : 'Could not send the report.') : 'Thanks. We’ll review this listing.');
+}
+
+async function contactBlock(p, box = el('div', { class: 'adopt-contact' })) {
+  if (!S.me || !S.sb) {
+    box.replaceChildren(el('p', { class: 'small', style: 'color: var(--ink-2)', text: 'Sign in to see how to contact the person listing this pet. It’s free and keeps their details away from spam.' }),
+      el('button', { type: 'button', class: 'btn', 'data-sign-in': '', text: 'Sign in to contact' }));
+    return box;
+  }
+  const { data, error } = await S.sb.from('adopt_contacts').select('contact').eq('listing_id', p.id).maybeSingle();
+  if (error || !data) { box.replaceChildren(el('p', { class: 'small muted', text: 'Contact details aren’t available for this listing.' })); return box; }
+  box.replaceChildren(el('span', { class: 'eyebrow', text: p.lister === 'rescue' ? 'Contact the rescue' : 'Contact the owner' }),
+    el('span', { class: 'adopt-contact-value' }, contactLink(data.contact)),
+    el('span', { class: 'small muted', text: 'Say which pet you’re asking about, and tell them a little about your home.' }));
+  return box;
+}
+
+// ================= Browse pages (/adopt/, /adopt/dogs/, /adopt/cats/) =================
 async function browse() {
   const grid = document.querySelector('[data-adopt-grid]');
   const count = document.querySelector('[data-adopt-count]');
@@ -41,41 +66,21 @@ async function browse() {
   const modal = document.getElementById('adopt-modal');
   const detail = document.querySelector('[data-adopt-detail]');
   const params = new URLSearchParams(location.search);
-  const state = { pet: 'all', country: 'all', area: '', page: 0, me: null, sb: null };
+  const state = { pet: grid.dataset.defaultPet || 'all', country: 'all', area: '', page: 0 };
+  let built = new Set();
+  try { built = new Set(JSON.parse(document.getElementById('adopt-built').textContent)); } catch (e) { /* no built pages yet */ }
+  const hrefOf = (p) => (built.has(p.id) ? `/adopt/pet/${p.id}/` : `/adopt/?pet=${p.id}`);
 
   function tile(p) {
-    const b = el('button', { type: 'button', class: 'pet-tile', 'aria-label': `${p.name}: ${facts(p)}, ${p.area}` },
+    const b = el('a', { class: 'pet-tile', href: hrefOf(p), 'data-id': p.id },
       photo(p, 'pet-tile-img'),
       el('span', { class: 'pet-tile-body' },
         el('span', { class: 'pet-tile-name' }, p.name, p.status === 'adopted' ? el('span', { class: 'pill adopt-done', text: 'Adopted' }) : null),
         el('span', { class: 'small', style: 'color: var(--ink-2)', text: facts(p) }),
         el('span', { class: 'small muted', text: `${p.area} · ${p.country}` }),
         el('span', { class: `pill ${p.lister === 'rescue' ? 'adopt-rescue' : 'adopt-owner'}`, text: p.lister === 'rescue' ? 'Rescue' : 'Owner rehoming' })));
-    b.addEventListener('click', () => open(p));
+    b.addEventListener('click', (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return; e.preventDefault(); open(p); });
     return b;
-  }
-
-  async function report(p) {
-    if (!state.me) return requireSignIn();
-    const reason = prompt('What’s wrong with this listing? For example: asking for money, a deposit or shipping, or the pet seems not to exist.');
-    if (!reason || !reason.trim()) return;
-    const { error } = await state.sb.from('reports').insert({ reporter_id: state.me.id, target_type: 'listing', target_id: p.id, reason: reason.trim().slice(0, 500) });
-    toast(error ? (/duplicate/i.test(error.message) ? 'You already reported this listing.' : 'Could not send the report.') : 'Thanks. We’ll review this listing.');
-  }
-
-  async function contactBlock(p) {
-    const box = el('div', { class: 'adopt-contact' });
-    if (!state.me) {
-      box.append(el('p', { class: 'small', style: 'color: var(--ink-2)', text: 'Sign in to see how to contact the person listing this pet. It’s free and keeps their details away from spam.' }),
-        el('button', { type: 'button', class: 'btn', 'data-sign-in': '', text: 'Sign in to contact' }));
-      return box;
-    }
-    const { data, error } = await state.sb.from('adopt_contacts').select('contact').eq('listing_id', p.id).maybeSingle();
-    if (error || !data) { box.append(el('p', { class: 'small muted', text: 'Contact details aren’t available for this listing.' })); return box; }
-    box.append(el('span', { class: 'eyebrow', text: p.lister === 'rescue' ? 'Contact the rescue' : 'Contact the owner' }),
-      el('span', { class: 'adopt-contact-value' }, contactLink(data.contact)),
-      el('span', { class: 'small muted', text: 'Say which pet you’re asking about, and tell them a little about your home.' }));
-    return box;
   }
 
   async function open(p) {
@@ -104,8 +109,8 @@ async function browse() {
 
   async function load(reset) {
     if (reset) state.page = 0;
-    if (!state.sb) { grid.replaceChildren(emptyBox('Adoption listings open very soon.')); count.textContent = ''; return; }
-    let q = state.sb.from('adopt_listings').select(COLS, { count: 'exact' }).eq('removed', false)
+    if (!S.sb) return; // keep the pets the build already put on the page
+    let q = S.sb.from('adopt_listings').select(COLS, { count: 'exact' }).eq('removed', false)
       .order('status', { ascending: false }).order('created_at', { ascending: false }).range(0, (state.page + 1) * PAGE - 1);
     // Adopted pets stay visible for 30 days as happy endings, then drop off.
     q = q.or(`status.eq.available,updated_at.gte.${new Date(Date.now() - 30 * 864e5).toISOString()}`);
@@ -114,16 +119,18 @@ async function browse() {
     if (state.area) q = q.ilike('area', `%${state.area.replace(/[%_,()]/g, '')}%`);
     const { data, error, count: total } = await q;
     if (error) {
+      if (grid.querySelector('.pet-tile') && reset && !state.area && state.country === 'all' && state.pet === (grid.dataset.defaultPet || 'all')) return;
       grid.replaceChildren(emptyBox(notReady(error) ? 'Adoption listings open very soon.' : 'Pets could not load right now. Please refresh in a moment.'));
       count.textContent = ''; more.hidden = true; if (!notReady(error)) console.error(error); return;
     }
     const filtered = state.pet !== 'all' || state.country !== 'all' || state.area;
     grid.replaceChildren(...(data.length ? data.map(tile) : [emptyBox(filtered ? 'No pets match yet. Try another area, or check back soon.' : 'No pets listed yet. Need to rehome a dog or cat?',
       el('a', { class: 'btn', href: '/adopt/list/', text: 'List a pet' }))]));
-    count.textContent = data.length ? `${total} ${total === 1 ? 'pet' : 'pets'}` : '';
+    const w = state.pet === 'dogs' ? ['dog', 'dogs'] : state.pet === 'cats' ? ['cat', 'cats'] : ['pet', 'pets'];
+    count.textContent = data.length ? `${total} ${total === 1 ? w[0] : w[1]}` : '';
     more.hidden = data.length >= (total || 0);
     const want = params.get('pet');
-    if (want && reset) { params.delete('pet'); const hit = data.find((x) => x.id === want) || (await state.sb.from('adopt_listings').select(COLS).eq('id', want).maybeSingle()).data; if (hit) open(hit); }
+    if (want && reset) { params.delete('pet'); const hit = data.find((x) => x.id === want) || (await S.sb.from('adopt_listings').select(COLS).eq('id', want).maybeSingle()).data; if (hit) open(hit); }
   }
 
   const chips = (attr, key) => document.querySelectorAll(`[${attr}]`).forEach((b) => b.addEventListener('click', () => {
@@ -138,8 +145,8 @@ async function browse() {
   area.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { state.area = area.value.trim(); load(true); }, 300); });
   more.addEventListener('click', () => { state.page++; load(false); });
 
-  state.sb = await getClient();
-  state.me = await currentProfile();
+  S.sb = await getClient();
+  S.me = await currentProfile();
   load(true);
 }
 
@@ -242,5 +249,16 @@ async function listPage() {
   loadMine();
 }
 
+// ================= A pet's own page (/adopt/pet/<id>/) =================
+async function petPage() {
+  S.sb = await getClient();
+  S.me = await currentProfile();
+  const box = document.querySelector('[data-pet-contact]');
+  if (box) contactBlock({ id: box.dataset.id, lister: box.dataset.lister }, box);
+  const rep = document.querySelector('[data-pet-report]');
+  if (rep) rep.addEventListener('click', () => report({ id: rep.dataset.petReport }));
+}
+
 if (document.querySelector('[data-adopt-grid]')) browse();
+if (document.querySelector('[data-pet-report]')) petPage();
 if (document.querySelector('[data-adopt-form-slot]')) listPage();

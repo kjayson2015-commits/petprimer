@@ -1,10 +1,10 @@
-<!--meta {"path": "/adopt/", "nav": "adopt", "title": "Adopt a Dog or Cat: Free Rehoming Listings | Pet Primer", "description": "Browse dogs and cats who need a new home in the US and UK, listed free by owners and rescues. Contact them directly. No selling, no deposits, no shipping fees.", "schema": "page"}-->
+<!--meta {"path": "/adopt/", "nav": "adopt", "title": "Adopt a Dog or Cat: Free Rehoming Listings | Pet Primer", "description": "Browse dogs and cats who need a new home in the US and UK, listed free by owners and rescues. Contact them directly. No selling, no deposits, no shipping fees.", "schema": "page", "custom": "adopt"}-->
 <section class="wrap adopt-page">
 <div class="adopt-head">
 <div class="adopt-head-text">
-<p class="eyebrow">Adopt</p>
-<h1>Find a dog or cat who needs a home</h1>
-<p class="lede">Free listings from owners and rescues in the US and UK. Find a pet you like, then contact the person listing them directly. Pet Primer never charges anyone.</p>
+{{ADOPT_CRUMBS}}<p class="eyebrow">Adopt</p>
+<h1>{{ADOPT_H1}}</h1>
+<p class="lede">{{ADOPT_INTRO}}</p>
 </div>
 <div class="adopt-head-cta">
 <a class="btn big" href="/adopt/list/">List a pet for adoption</a>
@@ -14,9 +14,9 @@
 
 <div class="adopt-bar" role="group" aria-label="Filter pets">
 <div class="chips" role="group" aria-label="Pet">
-<button type="button" class="chip" data-adopt-pet="all" aria-pressed="true">Dogs and cats</button>
-<button type="button" class="chip" data-adopt-pet="dogs" aria-pressed="false">Dogs</button>
-<button type="button" class="chip" data-adopt-pet="cats" aria-pressed="false">Cats</button>
+<button type="button" class="chip" data-adopt-pet="all" aria-pressed="{{PRESSED_ALL}}">Dogs and cats</button>
+<button type="button" class="chip" data-adopt-pet="dogs" aria-pressed="{{PRESSED_DOGS}}">Dogs</button>
+<button type="button" class="chip" data-adopt-pet="cats" aria-pressed="{{PRESSED_CATS}}">Cats</button>
 </div>
 <div class="chips" role="group" aria-label="Country">
 <button type="button" class="chip" data-adopt-country="all" aria-pressed="true">US and UK</button>
@@ -29,8 +29,9 @@
 
 <div class="adopt-layout">
 <div>
-<p class="small muted" data-adopt-count role="status" style="margin-bottom: 12px"></p>
-<div class="adopt-grid" data-adopt-grid aria-live="polite"><p class="muted">Loading pets…</p></div>
+<h2 class="sr-only">{{ADOPT_LIST_HEADING}}</h2>
+<p class="small muted" data-adopt-count role="status" style="margin-bottom: 12px">{{ADOPT_COUNT}}</p>
+<div class="adopt-grid" data-adopt-grid data-default-pet="{{ADOPT_PET}}" aria-live="polite">{{ADOPT_TILES}}</div>
 <button type="button" class="btn ghost adopt-more" data-adopt-more hidden>Show more pets</button>
 </div>
 <aside class="adopt-aside" aria-label="Adopting safely">
@@ -55,6 +56,16 @@
 </div>
 </aside>
 </div>
+</section>
+
+<section class="wrap adopt-faq" aria-labelledby="adopt-faq-h">
+<h2 id="adopt-faq-h">Questions about finding a pet</h2>
+<div class="adopt-faq-list">
+{{ADOPT_FAQ}}
+</div>
+<nav class="adopt-links" aria-label="Browse pets">
+<a href="/adopt/dogs/">Dogs for adoption</a><a href="/adopt/cats/">Cats for adoption</a><a href="/adopt/list/">Rehome a dog or cat</a><a href="/dogs/">Dog care notes</a><a href="/cats/">Cat care notes</a>
+</nav>
 </section>
 
 <div class="modal" id="adopt-modal" hidden>

@@ -292,8 +292,130 @@ function quizData(notes) {
   return JSON.stringify(q).replace(/</g, '\\u003c');
 }
 
+
+// ---------- Adopt: "Help me find a pet" ----------
+// Listings live in Supabase (supabase/006_adoption.sql). Every rebuild turns them into real pages,
+// so search engines see each pet without running any JavaScript.
+const ADOPT_COLS = 'id,lister,pet,name,age,sex,size,country,area,about,good_with,photo_url,status,created_at,updated_at';
+async function loadListings() {
+  if (!SB_URL || !SB_KEY) return [];
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/adopt_listings?removed=eq.false&select=${ADOPT_COLS}&order=created_at.desc&limit=2000`, { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    const cutoff = Date.now() - 30 * 864e5;
+    const rows = (await res.json()).filter((l) => /^[0-9a-f-]{36}$/i.test(l.id) && (l.status === 'available' || new Date(l.updated_at).getTime() > cutoff));
+    rows.sort((a, b) => (a.status === b.status ? b.created_at.localeCompare(a.created_at) : a.status === 'available' ? -1 : 1));
+    console.log(`Loaded ${rows.length} adoption listings.`);
+    return rows;
+  } catch (err) {
+    console.log('Adoption listings not loaded (run supabase/006_adoption.sql to turn them on):', err.message);
+    return [];
+  }
+}
+const A_PET = { dogs: 'Dog', cats: 'Cat' };
+const A_SEX = { male: 'Male', female: 'Female', unknown: '' };
+const A_SIZE = { small: 'Small', medium: 'Medium', large: 'Large', '': '' };
+const A_COUNTRY = { US: 'United States', UK: 'United Kingdom' };
+const petUrl = (l) => `/adopt/pet/${l.id}/`;
+const aFacts = (l) => [A_PET[l.pet], l.age, A_SEX[l.sex], A_SIZE[l.size] && `${A_SIZE[l.size]} size`].filter(Boolean).join(' · ');
+const aLister = (l) => `<span class="pill ${l.lister === 'rescue' ? 'adopt-rescue' : 'adopt-owner'}">${l.lister === 'rescue' ? 'Rescue' : 'Owner rehoming'}</span>`;
+const aImg = (l, cls, eager) => l.photo_url
+  ? `<img class="${cls}" src="${esc(l.photo_url)}" alt="${esc(`${l.name}, a ${A_PET[l.pet].toLowerCase()} for adoption in ${l.area}`)}"${eager ? '' : ' loading="lazy"'}>`
+  : `<span class="${cls} adopt-nophoto" aria-hidden="true"><img src="/assets/img/paws-empty.svg" alt="" width="96" height="72"></span>`;
+function petTile(l) {
+  return `<a class="pet-tile" href="${petUrl(l)}" data-id="${esc(l.id)}">${aImg(l, 'pet-tile-img')}<span class="pet-tile-body"><span class="pet-tile-name">${esc(l.name)}${l.status === 'adopted' ? '<span class="pill adopt-done">Adopted</span>' : ''}</span><span class="small" style="color: var(--ink-2)">${esc(aFacts(l))}</span><span class="small muted">${esc(l.area)} · ${esc(l.country)}</span>${aLister(l)}</span></a>`;
+}
+const ADOPT_FAQ = [
+  ['How does “Help me find a pet” work?', 'Owners and rescues in the US and UK list dogs and cats who need a new home. You browse, open a pet’s page, sign in to see how to contact the person listing them, and arrange to meet. The adoption is agreed between you and them.'],
+  ['Is it free to adopt or list a pet?', 'Yes. Browsing and listing are free. Pet Primer does not charge adopters, owners or rescues, and takes nothing from any adoption.'],
+  ['Can I rehome my own dog or cat here?', 'Yes. Choose “List a pet for adoption”, add a photo and a description, and say how people can reach you. Owners agree not to sell their pet. Rescues may mention their normal adoption fee, paid to the rescue.'],
+  ['How do I avoid pet adoption scams?', 'Meet the pet in person before you agree to anything. Never pay a deposit, “holding” fee or shipping fee to someone you have not met, ask to see vet records yourself, and be wary of pressure to decide fast. Report any listing that feels wrong.'],
+  ['Do you ship pets or arrange delivery?', 'No. Pet Primer never handles pets, transport or money. Anyone who asks you to pay online so they can ship a pet to you is very likely running a scam.'],
+  ['Which areas do you cover?', 'The United States and the United Kingdom. Search by town, city or state to find pets near you.']
+];
+const adoptFaqHtml = () => ADOPT_FAQ.map(([q, a], i) => `<details class="faq"${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><div class="answer"><p>${esc(a)}</p></div></details>`).join('\n');
+const ADOPT_VIEWS = [
+  { path: '/adopt/', pet: 'all', h1: 'Help me find a pet', crumb: null,
+    intro: 'Free listings from owners and rescues in the US and UK. Find a pet you like, then contact the person listing them directly. Pet Primer never charges anyone.',
+    title: 'Help Me Find a Pet: Adopt a Dog or Cat Near You | Pet Primer',
+    desc: 'Find a dog or cat who needs a new home near you. Free adoption and rehoming listings from owners and rescues across the US and UK, with no fees and no middleman.' },
+  { path: '/adopt/dogs/', pet: 'dogs', h1: 'Help me find a dog', crumb: 'Dogs',
+    intro: 'Dogs and puppies who need a new home in the US and UK, listed free by their owners and by rescues. Search your area, then contact the person listing them directly.',
+    title: 'Dogs for Adoption Near You: Help Me Find a Dog | Pet Primer',
+    desc: 'Dogs and puppies for adoption in the US and UK, listed free by owners rehoming their dog and by rescues. Search by town or state and contact them directly.' },
+  { path: '/adopt/cats/', pet: 'cats', h1: 'Help me find a cat', crumb: 'Cats',
+    intro: 'Cats and kittens who need a new home in the US and UK, listed free by their owners and by rescues. Search your area, then contact the person listing them directly.',
+    title: 'Cats for Adoption Near You: Help Me Find a Cat | Pet Primer',
+    desc: 'Cats and kittens for adoption in the US and UK, listed free by owners rehoming their cat and by rescues. Search by town or state and contact them directly.' }
+];
+function adoptCrumbs(trail) {
+  const items = [['Home', '/'], ...trail];
+  return {
+    html: `<nav class="crumbs" aria-label="Breadcrumb">${items.map(([n, u], i) => i === items.length - 1 ? esc(n) : `<a href="${u}">${esc(n)}</a>`).join(' › ')}</nav>`,
+    schema: { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items.map(([n, u], i) => ({ '@type': 'ListItem', position: i + 1, name: n, item: SITE + u })) }
+  };
+}
+function adoptPage(tpl, view, listings) {
+  const items = listings.filter((l) => view.pet === 'all' || l.pet === view.pet);
+  const live = items.filter((l) => l.status === 'available');
+  const crumbs = adoptCrumbs(view.crumb ? [['Adopt', '/adopt/'], [view.crumb, view.path]] : [['Adopt', '/adopt/']]);
+  const word = view.pet === 'dogs' ? ['dog', 'dogs'] : view.pet === 'cats' ? ['cat', 'cats'] : ['pet', 'pets'];
+  const empty = `<div class="empty adopt-empty"><img src="/assets/img/paws-empty.svg" alt="" width="132" height="99" class="empty-art"><p>No ${word[1]} listed yet. Need to rehome a dog or cat?</p><a class="btn" href="/adopt/list/">List a pet</a></div>`;
+  const pressed = (v) => String(view.pet === v);
+  let content = tpl.content
+    .replaceAll('{{ADOPT_CRUMBS}}', view.crumb ? crumbs.html : '').replaceAll('{{ADOPT_H1}}', esc(view.h1)).replaceAll('{{ADOPT_INTRO}}', esc(view.intro))
+    .replaceAll('{{ADOPT_PET}}', view.pet).replaceAll('{{PRESSED_ALL}}', pressed('all')).replaceAll('{{PRESSED_DOGS}}', pressed('dogs')).replaceAll('{{PRESSED_CATS}}', pressed('cats'))
+    .replaceAll('{{ADOPT_LIST_HEADING}}', `${word[1].charAt(0).toUpperCase() + word[1].slice(1)} looking for a home`)
+    .replaceAll('{{ADOPT_COUNT}}', items.length ? `${items.length} ${items.length === 1 ? word[0] : word[1]}` : '')
+    .replaceAll('{{ADOPT_TILES}}', items.length ? items.map(petTile).join('\n') : empty)
+    .replaceAll('{{ADOPT_FAQ}}', adoptFaqHtml());
+  content += `\n<script type="application/json" id="adopt-built">${JSON.stringify(listings.map((l) => l.id))}</script>`;
+  const schema = [crumbs.schema, { '@context': 'https://schema.org', '@type': 'CollectionPage', name: view.h1, description: view.desc, url: SITE + view.path, isPartOf: { '@type': 'WebSite', name: 'Pet Primer', url: SITE + '/' },
+    mainEntity: { '@type': 'ItemList', numberOfItems: live.length, itemListElement: live.slice(0, 100).map((l, i) => ({ '@type': 'ListItem', position: i + 1, url: SITE + petUrl(l), name: `${l.name}, ${A_PET[l.pet].toLowerCase()} for adoption in ${l.area}` })) } }];
+  if (view.pet === 'all') schema.push({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: ADOPT_FAQ.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) });
+  const ogImage = (live.find((l) => l.photo_url) || {}).photo_url || '/assets/img/three-dogs.jpg';
+  return page({ pathName: view.path, nav: 'adopt', title: view.title, description: view.desc, ogImage, schema, content });
+}
+function adoptPreview(listings) {
+  const live = listings.filter((l) => l.status === 'available').slice(0, 4);
+  return live.length ? `<div class="adopt-grid" style="margin-top: 24px">${live.map(petTile).join('\n')}</div>` : '';
+}
+function petPage(l, listings) {
+  const petWord = A_PET[l.pet].toLowerCase();
+  const section = l.pet === 'cats' ? ['Cats', '/adopt/cats/'] : ['Dogs', '/adopt/dogs/'];
+  const crumbs = adoptCrumbs([['Adopt', '/adopt/'], section, [l.name, petUrl(l)]]);
+  const more = listings.filter((x) => x.id !== l.id && x.status === 'available' && x.pet === l.pet).sort((a, b) => (b.country === l.country) - (a.country === l.country)).slice(0, 4);
+  const adopted = l.status === 'adopted';
+  const about = String(l.about || '').split(/\n{2,}/).map((t) => `<p>${esc(t).replace(/\n/g, '<br>')}</p>`).join('');
+  const listed = date(l.created_at);
+  const content = `<article class="wrap adopt-page pet-page-wrap">
+${crumbs.html}
+<div class="pet-page">
+${aImg(l, 'pet-page-img', true)}
+<div class="pet-page-main">
+<p class="eyebrow">${esc(A_PET[l.pet])} for adoption · ${esc(l.area)}, ${esc(l.country)}</p>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px"><h1>${esc(l.name)}</h1>${adopted ? '<span class="pill adopt-done">Adopted</span>' : ''}${aLister(l)}</div>
+<p style="color: var(--ink-2); font-weight: 600; font-size: 18px">${esc(aFacts(l))}</p>
+<p class="small muted">${esc(l.area)}, ${esc(A_COUNTRY[l.country] || l.country)} · Listed ${esc(listed)}</p>
+<div class="prose pet-about">${about}</div>
+${l.good_with ? `<p><strong>Good with:</strong> ${esc(l.good_with)}</p>` : ''}
+${adopted ? `<div class="adopt-contact"><strong>${esc(l.name)} has found a home.</strong><a href="${section[1]}">See other ${section[0].toLowerCase()} looking for a home</a></div>`
+    : `<div class="adopt-contact" data-pet-contact data-id="${esc(l.id)}" data-lister="${esc(l.lister)}"><p class="small" style="color: var(--ink-2)">Sign in to see how to contact the person listing ${esc(l.name)}. It’s free and keeps their details away from spam.</p><button type="button" class="btn" data-sign-in>Sign in to contact</button></div>`}
+<p class="small adopt-warn">Never send money for a deposit, “holding” or shipping before you’ve met the pet in person.</p>
+<button type="button" class="btn plain" style="padding: 0; align-self: flex-start" data-pet-report="${esc(l.id)}">Report this listing</button>
+</div>
+</div>
+${more.length ? `<section style="margin-top: 56px" aria-labelledby="more-h"><h2 id="more-h" style="font-size: 28px; margin-bottom: 18px">More ${section[0].toLowerCase()} looking for a home</h2><div class="adopt-grid">${more.map(petTile).join('\n')}</div><p style="margin-top: 18px"><a href="${section[1]}" style="font-weight: 600">See all ${section[0].toLowerCase()} for adoption →</a></p></section>` : ''}
+<div class="panel" style="margin-top: 40px"><h2 style="font-size: 20px; font-family: var(--body)">Before ${esc(l.name)} comes home</h2><p class="muted">Read our <a href="/${l.pet}/">${petWord} care notes</a>, check <a href="/can-my-pet-eat/">which foods and plants are safe</a>, and ask other owners anything in the <a href="/community/">community</a>.</p></div>
+</article>`;
+  const desc = `Meet ${l.name} (${aFacts(l)}) in ${l.area}, ${l.country}, ${adopted ? 'who has found a new home' : 'looking for a new home'}. ${plainText(l.about)}`.slice(0, 158).replace(/\s\S*$/, '…');
+  const schema = [crumbs.schema, { '@context': 'https://schema.org', '@type': 'WebPage', name: `${l.name}: ${petWord} for adoption in ${l.area}`, description: desc, url: SITE + petUrl(l), datePublished: l.created_at, dateModified: l.updated_at, ...(l.photo_url ? { primaryImageOfPage: { '@type': 'ImageObject', url: abs(l.photo_url) } } : {}), isPartOf: { '@type': 'CollectionPage', url: SITE + section[1] } }];
+  return page({ pathName: petUrl(l), nav: 'adopt', title: `${l.name}: ${A_PET[l.pet]} for Adoption in ${l.area} | Pet Primer`, description: desc, robots: adopted ? 'noindex, follow' : 'index, follow', ogImage: l.photo_url || '/assets/img/three-dogs.jpg', schema, content: content + `\n<script type="module" src="/assets/js/adopt.js?v={{version}}"></script>` });
+}
+
 // ---------- Build ----------
 async function build() {
+  const listings = await loadListings();
   const posts = (await loadPosts()).filter((p) => p.status === 'published' && p.slug && !RESERVED_SLUGS.includes(p.slug));
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
@@ -354,15 +476,17 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
     if (!m) throw new Error('Missing meta comment in pages/' + file);
     const meta = JSON.parse(m[1]);
     let content = src.slice(m[0].length);
+    if (meta.custom === 'adopt') { for (const view of ADOPT_VIEWS) write(view.path, adoptPage({ content }, view, listings)); continue; }
     content = content.replaceAll('{{DOG_COUNT}}', count(dogs, 'Dog')).replaceAll('{{CAT_COUNT}}', count(cats, 'Cat'))
       .replaceAll('{{LATEST}}', notes.slice(0, 6).map(card).join('\n') || '<p class="muted">The first notes are being written now.</p>')
       .replaceAll('{{QUIZ_DATA}}', quizData(notes)).replaceAll('{{EAT_COUNT}}', String(CHECKER.items.length))
-      .replaceAll('{{FAQ_LIST}}', faqList).replaceAll('{{MYTHS}}', mythSection).replaceAll('{{EXAMPLE_CLAIM}}', exampleClaim);
+      .replaceAll('{{ADOPT_PREVIEW}}', adoptPreview(listings)).replaceAll('{{FAQ_LIST}}', faqList).replaceAll('{{MYTHS}}', mythSection).replaceAll('{{EXAMPLE_CLAIM}}', exampleClaim);
     const schema = meta.schema === 'home' ? homeSchema : meta.schema === 'about' ? { '@context': 'https://schema.org', '@type': 'AboutPage', name: 'About Pet Primer', url: SITE + '/about/', mainEntity: { '@type': 'Person', name: 'Gilbert Jones', description: 'Dog owner and creator of Pet Primer' } } : null;
     write(meta.path === '/404.html' ? '404.html' : meta.path, page({ pathName: meta.path, nav: meta.nav, title: meta.title, description: meta.description, robots: meta.noindex ? 'noindex, follow' : 'index, follow', schema, content, bare: meta.bare }));
   }
 
   for (const p of posts) write(urlOf(p), notePage(p, notes));
+  for (const l of listings) write(petUrl(l), petPage(l, listings));
   write('/can-my-pet-eat/', eatIndex());
   for (const it of CHECKER.items) write(eatUrl(it), eatPage(it, posts));
   write(AUTHOR_URL, authorPage(notes));
@@ -377,8 +501,11 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
     { kind: 'Page', title: 'Dog care notes', url: '/dogs/', tags: 'dog dogs puppy', summary: 'All dog notes.', text: '' },
     { kind: 'Page', title: 'Cat care notes', url: '/cats/', tags: 'cat cats kitten', summary: 'All cat notes.', text: '' },
     { kind: 'Page', title: 'Frequently asked questions', url: '/faq/', tags: 'faq questions answers', summary: 'Common dog and cat questions.', text: '' },
-    { kind: 'Adopt', title: 'Adopt a dog or cat', url: '/adopt/', tags: 'adopt adoption rehome rehoming rescue shelter new home puppy kitten find a pet', summary: 'Dogs and cats who need a home, listed free by owners and rescues.', text: '' },
+    { kind: 'Adopt', title: 'Help me find a pet', url: '/adopt/', tags: 'help me find a pet adopt adoption rehome rehoming rescue shelter new home puppy kitten find a pet', summary: 'Dogs and cats who need a home, listed free by owners and rescues.', text: '' },
+    { kind: 'Adopt', title: 'Help me find a dog', url: '/adopt/dogs/', tags: 'dogs for adoption puppy adopt a dog near me rehome', summary: 'Dogs and puppies for adoption.', text: '' },
+    { kind: 'Adopt', title: 'Help me find a cat', url: '/adopt/cats/', tags: 'cats for adoption kitten adopt a cat near me rehome', summary: 'Cats and kittens for adoption.', text: '' },
     { kind: 'Adopt', title: 'List a pet for adoption', url: '/adopt/list/', tags: 'rehome rehoming give away my dog cat list post adoption rescue', summary: 'Rehoming a pet? List them free.', text: '' },
+    ...listings.filter((l) => l.status === 'available').map((l) => ({ kind: 'Adopt', title: `${l.name}: ${A_PET[l.pet].toLowerCase()} for adoption in ${l.area}`, url: petUrl(l), tags: `adopt adoption rehome ${l.pet} ${A_PET[l.pet].toLowerCase()} ${l.area} ${l.country}`, summary: aFacts(l), text: String(l.about || '').slice(0, 400) })),
     { kind: 'Community', title: 'Community board', url: '/community/', tags: 'community ask question photo help forum okay share', summary: 'Get a second opinion from other owners and share photos.', text: '' },
     { kind: 'Page', title: 'Who’s behind Pet Primer', url: '/about/', tags: 'about gilbert jones who vet veterinarian', summary: 'Gilbert Jones and why Pet Primer exists.', text: '' },
     ...CHECKER.items.map((it) => ({ kind: 'Can my pet eat this?', title: eatTitle(it), url: eatUrl(it), tags: `${it.name} ${it.aka || ''} eat safe toxic poison ${it.group}`, summary: `Dogs: ${EAT[it.dog][0]}. Cats: ${EAT[it.cat][0]}.`, text: `${it.dog_note || ''} ${it.cat_note || ''}` })),
@@ -393,9 +520,10 @@ ${renderMarkdown(String(p.body || '').split(/\n{2,}/).slice(0, 2).join('\n\n'), 
 
   // Sitemap + robots
   const today = new Date().toISOString().slice(0, 10);
-  const urls = [['/', today], ['/dogs/', today], ['/cats/', today], ['/faq/', today], ['/community/', today], ['/adopt/', today], ['/adopt/list/', today], ['/about/', today], ['/myths/', today], ['/how-we-grade/', today], ['/privacy/', today], ['/terms/', today], ['/emergency/', today], ['/tools/', today], ['/tools/chocolate-calculator/', today], ['/tools/dog-age/', today], ['/tools/myth-quiz/', today], ['/can-my-pet-eat/', today], [AUTHOR_URL, today],
+  const urls = [['/', today], ['/dogs/', today], ['/cats/', today], ['/faq/', today], ['/community/', today], ['/adopt/', today], ['/adopt/dogs/', today], ['/adopt/cats/', today], ['/adopt/list/', today], ['/about/', today], ['/myths/', today], ['/how-we-grade/', today], ['/privacy/', today], ['/terms/', today], ['/emergency/', today], ['/tools/', today], ['/tools/chocolate-calculator/', today], ['/tools/dog-age/', today], ['/tools/myth-quiz/', today], ['/can-my-pet-eat/', today], [AUTHOR_URL, today],
     ...CHECKER.items.map((it) => [eatUrl(it), '2026-10-17']),
-    ...posts.map((p) => [urlOf(p), String(p.updated_at || p.published_at || today).slice(0, 10)])];
+    ...posts.map((p) => [urlOf(p), String(p.updated_at || p.published_at || today).slice(0, 10)]),
+    ...listings.filter((l) => l.status === 'available').map((l) => [petUrl(l), String(l.updated_at || l.created_at).slice(0, 10)])];
   fs.writeFileSync(path.join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, d]) => `<url><loc>${SITE}${u}</loc><lastmod>${d}</lastmod></url>`).join('\n')}\n</urlset>\n`);
   fs.writeFileSync(path.join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /editor/\nDisallow: /search/\n\nSitemap: ${SITE}/sitemap.xml\n`);
   console.log(`Built ${posts.length} notes and ${fs.readdirSync(path.join(ROOT, 'pages')).length} pages into _site/ (version ${VERSION}).`);
