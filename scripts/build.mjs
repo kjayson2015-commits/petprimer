@@ -154,6 +154,8 @@ async function build() {
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
   copyDir(path.join(ROOT, 'assets'), path.join(OUT, 'assets'));
+  // Files that must sit at the top of the site (e.g. Google Search Console verification).
+  if (fs.existsSync(path.join(ROOT, 'static'))) copyDir(path.join(ROOT, 'static'), OUT);
   // Swap in larger photos where the build server can download them.
   try {
     const remote = JSON.parse(read('content/remote-images.json'));
