@@ -278,13 +278,20 @@ const SYN = {
 };
 const STOP = new Set('why does my do the a an is it of to for and in on with how what i can should when are does my your be'.split(' '));
 
-export function words(t) {
-  return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean).map((w) => {
-      if (SYN[w]) return SYN[w];
-      if (w.length >= 4) { const k = SYN_KEYS.find((key) => near(w, key)); if (k) return SYN[k]; }
-      return w;
-    });
+const rawWords = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+// vocab: words that really appear in the content. A real word (e.g. "grapes") is never
+// "corrected" into a look-alike synonym (e.g. "grazes" → eat); only typos are.
+export function words(t, vocab) {
+  return rawWords(t).map((w) => {
+    if (SYN[w]) return SYN[w];
+    if (w.length >= 4 && !(vocab && vocab.has(w))) { const k = SYN_KEYS.find((key) => near(w, key)); if (k) return SYN[k]; }
+    return w;
+  });
+}
+const VOCABS = new WeakMap();
+function vocabFor(items) {
+  if (!VOCABS.has(items)) VOCABS.set(items, new Set(items.flatMap((it) => rawWords([it.title, it.keyword, it.tags, it.summary, it.text].join(' ')))));
+  return VOCABS.get(items);
 }
 const SYN_KEYS = Object.keys(SYN).filter((k) => k.length >= 4);
 function near(a, b) {
@@ -299,10 +306,11 @@ function near(a, b) {
   return edits + (a.length - i) + (b.length - j) <= 1;
 }
 export function rank(items, q, limit = 8) {
-  const qt = words(q).filter((w) => !STOP.has(w));
+  const vocab = vocabFor(items);
+  const qt = words(q, vocab).filter((w) => !STOP.has(w));
   if (!qt.length) return [];
   return items.map((item) => {
-    const fields = [[words(item.title + ' ' + (item.keyword || '')), 3], [words((item.tags || '') + ' ' + (item.pet || '') + ' ' + (item.kind || '')), 2], [words((item.summary || '') + ' ' + (item.text || '')), 1]];
+    const fields = [[words(item.title + ' ' + (item.keyword || ''), vocab), 3], [words((item.tags || '') + ' ' + (item.pet || '') + ' ' + (item.kind || ''), vocab), 2], [words((item.summary || '') + ' ' + (item.text || ''), vocab), 1]];
     let total = 0, hit = 0;
     for (const w of qt) {
       let best = 0;
