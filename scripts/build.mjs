@@ -68,7 +68,7 @@ function page({ pathName, nav, title, description, robots = 'index, follow', ogT
     .replaceAll('{{jsonld}}', schema ? (Array.isArray(schema) ? schema : [schema]).map(jsonld).join('\n') : '');
   const header = bare ? '' : PARTS.header.replace(new RegExp(`data-nav="${nav}"`), `data-nav="${nav}" aria-current="page"`);
   const footer = bare ? '' : PARTS.footer;
-  const html = `<!doctype html>\n<html lang="en">\n<head>\n${head}</head>\n<body>\n${header}<main id="main">\n${content}\n</main>\n${footer}${PARTS.modals}</body>\n</html>\n`;
+  const html = `<!DOCTYPE html>\n<html lang="en">\n<head>\n${head}</head>\n<body>\n${header}<main id="main">\n${content}\n</main>\n${footer}${PARTS.modals}</body>\n</html>\n`;
   return toWebp(html.replaceAll('{{version}}', VERSION).replaceAll('{{year}}', String(YEAR)).replace(/(['"])\/assets\/js\/([\w-]+)\.js\1/g, `$1/assets/js/$2.js?v=${VERSION}$1`));
 }
 
@@ -128,6 +128,7 @@ function withContents(html, p) {
   const heads = [];
   const out = html.replace(/<h2>([\s\S]*?)<\/h2>/g, (m, inner) => {
     let id = inner.replace(/<[^>]+>/g, '').toLowerCase().replace(/&[a-z]+;|&#\d+;/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'section';
+    if (/^[0-9]/.test(id)) id = 's-' + id;
     while (used.has(id)) id += '-2';
     used.add(id); heads.push([id, inner.replace(/<[^>]+>/g, '').replace(/^\d+\.\s+/, '')]);
     return `<h2 id="${id}">${inner}</h2>`;
